@@ -20,10 +20,7 @@ export async function getOverdueScheduledAppointments() {
   const supabase = await createClient();
 
   const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  const todayStr = `${year}-${month}-${day}`;
+  const todayStr = today.toISOString().slice(0, 10);
 
   const { data, error } = await supabase
     .from("appointments")
@@ -50,8 +47,14 @@ export async function getOverdueScheduledAppointments() {
     .order("end_time", { ascending: true });
 
   if (error) {
-    console.error(error);
-    throw new Error("Nije moguće dohvatiti overdue termine.");
+    console.warn("Could not load overdue appointments:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+
+    return [];
   }
 
   const now = Date.now();
@@ -90,6 +93,7 @@ export async function getOverdueScheduledAppointments() {
     const end = new Date(
       `${item.appointment_date}T${item.end_time.slice(0, 5)}:00`,
     );
+
     return end.getTime() < now;
   });
 }

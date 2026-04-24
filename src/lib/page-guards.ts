@@ -8,12 +8,22 @@ import {
 } from "@/lib/permissions";
 
 export async function requireDashboardUser() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    await supabase.auth.signOut();
+    redirect("/login");
+  }
+
   const permissions = await getCurrentUserPermissions();
 
   if (!permissions) {
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-    redirect("/login");
+    redirect("/setup");
   }
 
   return permissions;

@@ -15,21 +15,36 @@ import {
   BarChart3,
   UserCog,
 } from "lucide-react";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import SetupChecklist from "@/components/setup-checklist";
+import { getSetupChecklistStatus } from "@/features/setup/checklist-queries";
 
 export default async function DashboardPage() {
   const permissions = await requireDashboardUser();
-  const overdueAppointments = await getOverdueScheduledAppointments();
+  const [overdueAppointments, salonSettings, setupChecklist] =
+    await Promise.all([
+      getOverdueScheduledAppointments(),
+      getSalonSettings(),
+      getSetupChecklistStatus(),
+    ]);
 
   return (
     <main className="min-h-screen bg-app-bg p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <OverdueAppointmentsPanel items={overdueAppointments} />
+        <SetupChecklist
+          servicesCount={setupChecklist.servicesCount}
+          roomsCount={setupChecklist.roomsCount}
+          employeesCount={setupChecklist.employeesCount}
+          salonHoursCount={setupChecklist.salonHoursCount}
+        />
 
         <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-app-text">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-app-text">
+            {salonSettings?.salon_name ?? "Salon"}
+          </h1>
           <p className="mt-2 text-app-muted">
-            Body &amp; Soul by Elizabeth Dobrović - upravljanje terminima i
-            klijentima.
+            Upravljanje terminima, klijentima i postavkama salona.
           </p>
         </div>
 

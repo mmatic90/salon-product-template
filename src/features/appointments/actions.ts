@@ -18,6 +18,7 @@ import {
   sendInstantSms,
 } from "@/lib/twilio/sms";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
+import { getSalonSettings } from "@/features/salon-settings/queries";
 
 export type AppointmentFormValues = {
   appointment_date: string;
@@ -126,24 +127,27 @@ function buildAppointmentCreatedSms(args: {
   clientName: string;
   date: string;
   startTime: string;
+  salonSignature: string;
 }) {
-  return `Bok ${args.clientName}, vaš termin je uspješno rezerviran za ${formatSmsDate(args.date)} u ${formatSmsTime(args.startTime)}. Body & Soul`;
+  return `Bok ${args.clientName}, vaš termin je uspješno rezerviran za ${formatSmsDate(args.date)} u ${formatSmsTime(args.startTime)}. ${args.salonSignature}`;
 }
 
 function buildAppointmentReminderSms(args: {
   clientName: string;
   date: string;
   startTime: string;
+  salonSignature: string;
 }) {
-  return `Podsjetnik: imate termin ${formatSmsDate(args.date)} u ${formatSmsTime(args.startTime)}. Body & Soul`;
+  return `Podsjetnik: imate termin ${formatSmsDate(args.date)} u ${formatSmsTime(args.startTime)}. ${args.salonSignature}`;
 }
 
 function buildAppointmentUpdatedSms(args: {
   clientName: string;
   date: string;
   startTime: string;
+  salonSignature: string;
 }) {
-  return `Bok ${args.clientName}, vaš termin je izmijenjen. Novi termin je ${formatSmsDate(args.date)} u ${formatSmsTime(args.startTime)}. Body & Soul`;
+  return `Bok ${args.clientName}, vaš termin je izmijenjen. Novi termin je ${formatSmsDate(args.date)} u ${formatSmsTime(args.startTime)}. ${args.salonSignature}`;
 }
 
 function didAppointmentDateOrTimeChange(
@@ -243,6 +247,8 @@ async function sendOrScheduleCreatedSms(args: {
     startTime,
     status,
   } = args;
+  const salonSettings = await getSalonSettings();
+  const salonSignature = salonSettings?.sms_signature || "Salon";
 
   console.log("[SMS] sendOrScheduleCreatedSms args:", {
     appointmentId,
@@ -274,6 +280,7 @@ async function sendOrScheduleCreatedSms(args: {
           clientName,
           date: appointmentDate,
           startTime,
+          salonSignature,
         }),
       });
 
@@ -306,6 +313,7 @@ async function sendOrScheduleCreatedSms(args: {
         clientName,
         date: appointmentDate,
         startTime,
+        salonSignature,
       }),
       sendAt,
     });
@@ -347,6 +355,9 @@ async function sendUpdatedSmsIfPossible(args: {
     status,
   } = args;
 
+  const salonSettings = await getSalonSettings();
+  const salonSignature = salonSettings?.sms_signature || "Salon";
+
   console.log("[SMS] sendUpdatedSmsIfPossible args:", {
     appointmentId,
     clientPhone,
@@ -367,6 +378,7 @@ async function sendUpdatedSmsIfPossible(args: {
         clientName,
         date: appointmentDate,
         startTime,
+        salonSignature,
       }),
     });
 
@@ -406,6 +418,8 @@ async function scheduleReminderIfPossible(args: {
     startTime,
     status,
   } = args;
+  const salonSettings = await getSalonSettings();
+  const salonSignature = salonSettings?.sms_signature || "Salon";
 
   console.log("[SMS] scheduleReminderIfPossible args:", {
     appointmentId,
@@ -455,6 +469,7 @@ async function scheduleReminderIfPossible(args: {
         clientName,
         date: appointmentDate,
         startTime,
+        salonSignature,
       }),
       sendAt,
     });
