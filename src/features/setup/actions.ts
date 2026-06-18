@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type SetupActionState = {
@@ -16,25 +15,37 @@ export async function completeInitialSetupAction(
   _prevState: SetupActionState,
   formData: FormData,
 ): Promise<SetupActionState> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return { error: "Niste prijavljeni." };
-  }
-
   const salonName = text(formData.get("salon_name"));
-  const email = user.email ?? "";
+  const email = text(formData.get("admin_email")).toLowerCase();
 
   if (!salonName) {
     return { error: "Naziv salona je obavezan." };
   }
 
+  if (!email) {
+    return { error: "Admin email je obavezan." };
+  }
+
   const admin = createAdminClient();
+
+  const { data: profile, error: profileLookupError } = await admin
+    .from("profiles")
+    .select("id, email")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (profileLookupError) {
+    return { error: profileLookupError.message };
+  }
+
+  if (!profile) {
+    return {
+      error:
+        "Admin profil s tim emailom ne postoji. Prvo kreiraj admin račun na /setup/create-admin.",
+    };
+  }
+
+  const userId = profile.id;
 
   const { data: existingSettings, error: settingsFetchError } = await admin
     .from("salon_settings")
@@ -48,7 +59,7 @@ export async function completeInitialSetupAction(
 
   const settingsPayload = {
     salon_name: salonName,
-    public_email: email || null,
+    public_email: email,
     sms_signature: salonName,
     primary_color: "#111827",
     timezone: "Europe/Zagreb",
@@ -76,7 +87,7 @@ export async function completeInitialSetupAction(
   }
 
   const { error: profileError } = await admin.from("profiles").upsert({
-    id: user.id,
+    id: userId,
     email,
     role: "admin",
     display_name: "Admin",
@@ -91,7 +102,7 @@ export async function completeInitialSetupAction(
   const { data: existingEmployee, error: employeeFetchError } = await admin
     .from("employees")
     .select("id")
-    .eq("profile_id", user.id)
+    .eq("profile_id", userId)
     .maybeSingle();
 
   if (employeeFetchError) {
@@ -114,7 +125,7 @@ export async function completeInitialSetupAction(
     }
   } else {
     const { error } = await admin.from("employees").insert({
-      profile_id: user.id,
+      profile_id: userId,
       display_name: "Admin",
       color_hex: "#2563eb",
       is_active: true,

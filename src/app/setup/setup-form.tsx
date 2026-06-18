@@ -10,7 +10,7 @@ const initialState: SetupActionState = {
   error: "",
 };
 
-export default function SetupForm({ userEmail }: { userEmail: string }) {
+export default function SetupForm() {
   const [state, formAction, isPending] = useActionState(
     completeInitialSetupAction,
     initialState,
@@ -34,14 +34,16 @@ export default function SetupForm({ userEmail }: { userEmail: string }) {
         />
       </label>
 
-      <div className="rounded-xl bg-neutral-100 px-4 py-3 text-sm text-neutral-600">
-        Admin korisnik će automatski biti kreiran kao <strong>Admin</strong>.
-        Kasnije možeš promijeniti ime u postavkama.
-      </div>
-
-      <div className="rounded-xl bg-neutral-100 px-4 py-3 text-sm text-neutral-600">
-        Prijavljeni email: <strong>{userEmail}</strong>
-      </div>
+      <label className="block space-y-2">
+        <span className="text-sm font-medium">Admin email *</span>
+        <input
+          name="admin_email"
+          type="email"
+          required
+          placeholder="admin@email.com"
+          className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+        />
+      </label>
 
       <button
         type="submit"
