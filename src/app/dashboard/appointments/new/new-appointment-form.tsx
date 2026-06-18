@@ -29,6 +29,41 @@ type Props = {
   employeeServices: AppointmentFormEmployeeService[];
   clients: ClientComboboxItem[];
   defaultDate: string;
+  labels: {
+    date: string;
+    startTime: string;
+    client: string;
+    clientName: string;
+    phone: string;
+    email: string;
+    services: string;
+    primaryGroup: string;
+    employee: string;
+    room: string;
+    firstChooseServices: string;
+    loadingAvailability: string;
+    noAvailableEmployees: string;
+    chooseEmployee: string;
+    chooseRoom: string;
+    priorityRoom: string;
+    noEmployeesWarning: string;
+    totalDuration: string;
+    endsAt: string;
+    status: string;
+    scheduled: string;
+    completed: string;
+    cancelled: string;
+    noShow: string;
+    clientNote: string;
+    internalNote: string;
+    saving: string;
+    saveAppointment: string;
+    fallbackSelectedEmployee: string;
+    fallbackSelectedRoom: string;
+    employeeAutoSelected: string;
+    roomAutoSelected: string;
+    availabilityFetchError: string;
+  };
 };
 
 function parseServicesJson(raw: string): AppointmentServiceInput[] {
@@ -70,6 +105,7 @@ export default function NewAppointmentForm({
   employeeServices,
   clients,
   defaultDate,
+  labels,
 }: Props) {
   const initialState: ActionState = {
     error: "",
@@ -177,7 +213,7 @@ export default function NewAppointmentForm({
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || "Greška pri dohvaćanju dostupnosti.");
+          throw new Error(result.error || labels.availabilityFetchError);
         }
 
         if (!cancelled) {
@@ -189,7 +225,7 @@ export default function NewAppointmentForm({
           setAvailabilityError(
             error instanceof Error
               ? error.message
-              : "Greška pri dohvaćanju dostupnosti.",
+              : labels.availabilityFetchError,
           );
         }
       } finally {
@@ -346,11 +382,9 @@ export default function NewAppointmentForm({
       if (nextEmployeeId) {
         const employeeName =
           filteredEmployees.find((employee) => employee.id === nextEmployeeId)
-            ?.display_name ?? "odabranog zaposlenika";
+            ?.display_name ?? labels.fallbackSelectedEmployee;
 
-        notices.push(
-          `Zaposlenik je automatski postavljen na "${employeeName}".`,
-        );
+        notices.push(`${labels.employeeAutoSelected} "${employeeName}".`);
       }
     }
 
@@ -392,9 +426,9 @@ export default function NewAppointmentForm({
       if (nextRoomId) {
         const roomName =
           filteredRooms.find((room) => room.id === nextRoomId)?.name ??
-          "odabranu sobu";
+          labels.fallbackSelectedRoom;
 
-        notices.push(`Soba je automatski postavljena na "${roomName}".`);
+        notices.push(`${labels.roomAutoSelected} "${roomName}".`);
       }
     }
 
@@ -421,7 +455,7 @@ export default function NewAppointmentForm({
             htmlFor="appointment_date"
             className="block text-sm font-medium text-app-text"
           >
-            Datum
+            {labels.date}
           </label>
           <input
             id="appointment_date"
@@ -439,7 +473,7 @@ export default function NewAppointmentForm({
             htmlFor="start_time"
             className="block text-sm font-medium text-app-text"
           >
-            Vrijeme početka
+            {labels.startTime}
           </label>
           <input
             id="start_time"
@@ -455,7 +489,7 @@ export default function NewAppointmentForm({
 
       <div className="space-y-1">
         <label className="block text-sm font-medium text-app-text">
-          Klijent
+          {labels.client}
         </label>
         <ClientCombobox
           clients={clients}
@@ -485,7 +519,7 @@ export default function NewAppointmentForm({
             htmlFor="client_name"
             className="block text-sm font-medium text-app-text"
           >
-            Ime klijenta
+            {labels.clientName}
           </label>
           <input
             id="client_name"
@@ -506,7 +540,7 @@ export default function NewAppointmentForm({
             htmlFor="client_phone"
             className="block text-sm font-medium text-app-text"
           >
-            Telefon
+            {labels.phone}
           </label>
           <input
             id="client_phone"
@@ -524,7 +558,7 @@ export default function NewAppointmentForm({
           htmlFor="client_email"
           className="block text-sm font-medium text-app-text"
         >
-          Email
+          {labels.email}
         </label>
         <input
           id="client_email"
@@ -539,7 +573,7 @@ export default function NewAppointmentForm({
       <div className="space-y-4 rounded-2xl border border-app-soft bg-app-card p-4 md:p-5">
         <div className="space-y-1">
           <label className="block text-sm font-medium text-app-text">
-            Usluge
+            {labels.services}
           </label>
           <AppointmentServicesEditor
             services={services}
@@ -549,7 +583,7 @@ export default function NewAppointmentForm({
 
           {selectedPrimaryService?.service_group ? (
             <p className="mt-2 text-sm text-app-muted">
-              Primarna grupa: {selectedPrimaryService.service_group}
+              {labels.primaryGroup}: {selectedPrimaryService.service_group}
             </p>
           ) : null}
         </div>
@@ -560,7 +594,7 @@ export default function NewAppointmentForm({
               htmlFor="employee_id"
               className="block text-sm font-medium text-app-text"
             >
-              Zaposlenik
+              {labels.employee}
             </label>
             <select
               id="employee_id"
@@ -575,12 +609,12 @@ export default function NewAppointmentForm({
             >
               <option value="">
                 {allSelectedServiceIds.length === 0
-                  ? "Prvo odaberi usluge"
+                  ? labels.firstChooseServices
                   : availabilityLoading
-                    ? "Učitavanje dostupnosti..."
+                    ? labels.loadingAvailability
                     : filteredEmployees.length === 0
-                      ? "Nema dostupnih zaposlenika"
-                      : "Odaberi zaposlenika"}
+                      ? labels.noAvailableEmployees
+                      : labels.chooseEmployee}
               </option>
               {filteredEmployees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
@@ -595,7 +629,7 @@ export default function NewAppointmentForm({
               htmlFor="room_id"
               className="block text-sm font-medium text-app-text"
             >
-              Soba
+              {labels.room}
             </label>
             <select
               id="room_id"
@@ -608,8 +642,8 @@ export default function NewAppointmentForm({
             >
               <option value="">
                 {allSelectedServiceIds.length > 0
-                  ? "Odaberi sobu"
-                  : "Prvo odaberi usluge"}
+                  ? labels.chooseRoom
+                  : labels.firstChooseServices}
               </option>
               {filteredRooms.map((room) => (
                 <option key={room.id} value={room.id}>
@@ -620,8 +654,7 @@ export default function NewAppointmentForm({
 
             {selectedPrimaryService?.priority_room ? (
               <p className="mt-2 text-sm text-app-muted">
-                Prioritetna soba primarne usluge:{" "}
-                {selectedPrimaryService.priority_room}
+                {labels.priorityRoom}: {selectedPrimaryService.priority_room}
               </p>
             ) : null}
           </div>
@@ -647,10 +680,7 @@ export default function NewAppointmentForm({
       {allSelectedServiceIds.length > 0 &&
       !availabilityLoading &&
       filteredEmployees.length === 0 ? (
-        <div className={messageWarnClass}>
-          Nema zaposlenika koji mogu raditi sve odabrane usluge na odabrani
-          datum.
-        </div>
+        <div className={messageWarnClass}>{labels.noEmployeesWarning}</div>
       ) : null}
 
       {serviceChangeNotice ? (
@@ -663,7 +693,7 @@ export default function NewAppointmentForm({
             htmlFor="duration_minutes"
             className="block text-sm font-medium text-app-text"
           >
-            Ukupno trajanje (minute)
+            {labels.totalDuration}
           </label>
           <input
             id="duration_minutes"
@@ -678,7 +708,7 @@ export default function NewAppointmentForm({
 
         <div className="space-y-1">
           <label className="block text-sm font-medium text-app-text">
-            Završava u
+            {labels.endsAt}
           </label>
           <input
             type="time"
@@ -693,7 +723,7 @@ export default function NewAppointmentForm({
             htmlFor="status"
             className="block text-sm font-medium text-app-text"
           >
-            Status
+            {labels.status}
           </label>
           <select
             id="status"
@@ -701,10 +731,10 @@ export default function NewAppointmentForm({
             defaultValue={state.values.status}
             className={fieldClass}
           >
-            <option value="scheduled">Zakazan</option>
-            <option value="completed">Odrađen</option>
-            <option value="cancelled">Otkazan</option>
-            <option value="no_show">Nije došao</option>
+            <option value="scheduled">{labels.scheduled}</option>
+            <option value="completed">{labels.completed}</option>
+            <option value="cancelled">{labels.cancelled}</option>
+            <option value="no_show">{labels.noShow}</option>
           </select>
         </div>
       </div>
@@ -714,7 +744,7 @@ export default function NewAppointmentForm({
           htmlFor="client_note"
           className="block text-sm font-medium text-app-text"
         >
-          Napomena za klijenta
+          {labels.clientNote}
         </label>
         <textarea
           id="client_note"
@@ -731,7 +761,7 @@ export default function NewAppointmentForm({
           htmlFor="internal_note"
           className="block text-sm font-medium text-app-text"
         >
-          Interna napomena
+          {labels.internalNote}
         </label>
         <textarea
           id="internal_note"
@@ -759,7 +789,7 @@ export default function NewAppointmentForm({
           }
           className="rounded-xl bg-app-accent px-5 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Spremanje..." : "Spremi termin"}
+          {pending ? labels.saving : labels.saveAppointment}
         </button>
       </div>
 

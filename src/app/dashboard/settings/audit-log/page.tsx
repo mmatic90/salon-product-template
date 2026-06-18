@@ -5,12 +5,15 @@ import PageHeader from "@/components/page-header";
 import PageSection from "@/components/page-section";
 import EmptyStateCard from "@/components/empty-state-card";
 import { getAuditLogs } from "@/features/audit/queries";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
+import { getLocaleFromLanguage } from "@/lib/utils";
 
-function formatDateTime(value: string) {
+function formatDateTime(value: string, locale: string, timeZone: string) {
   const date = new Date(value);
 
-  return new Intl.DateTimeFormat("hr-HR", {
-    timeZone: "Europe/Zagreb",
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -20,139 +23,80 @@ function formatDateTime(value: string) {
   }).format(date);
 }
 
-function actionLabel(action: string) {
-  switch (action) {
-    case "appointment_created":
-      return "Dodan termin";
-    case "appointment_updated":
-      return "Uređen termin";
-    case "appointment_cancelled":
-      return "Otkazan termin";
-    case "appointment_status_changed":
-      return "Promijenjen status termina";
-    case "appointment_deleted":
-      return "Obrisan termin";
+function actionLabel(action: string, t: ReturnType<typeof getTranslator>) {
+  const key = `auditLog.actions.${action}` as Parameters<typeof t>[0];
 
-    case "client_created":
-      return "Dodan klijent";
-    case "client_updated":
-      return "Uređen klijent";
-    case "client_deleted":
-      return "Obrisan klijent";
-
-    case "employee_created":
-      return "Dodan zaposlenik";
-    case "employee_updated":
-      return "Uređen zaposlenik";
-    case "employee_deactivated":
-      return "Deaktiviran zaposlenik";
-    case "employee_password_reset":
-      return "Resetirana lozinka zaposlenika";
-
-    case "service_created":
-      return "Dodana usluga";
-    case "service_deleted":
-      return "Obrisana usluga";
-    case "services_bulk_updated":
-      return "Uređene usluge";
-
-    case "room_created":
-      return "Dodana soba";
-    case "room_deleted":
-      return "Obrisana soba";
-    case "rooms_bulk_updated":
-      return "Uređene sobe";
-
-    case "equipment_created":
-      return "Dodana oprema";
-    case "equipment_deleted":
-      return "Obrisana oprema";
-    case "equipment_bulk_updated":
-      return "Uređena oprema";
-
-    case "service_rooms_bulk_updated":
-      return "Uređeno mapiranje usluga i soba";
-    case "employee_services_bulk_updated":
-      return "Uređeno mapiranje zaposlenika i usluga";
-    case "service_equipment_bulk_updated":
-      return "Uređeno mapiranje usluga i opreme";
-    case "salon_hours_bulk_updated":
-      return "Uređeno radno vrijeme salona";
-    case "service_group_limits_bulk_updated":
-      return "Uređeni group limits";
-
-    default:
-      return action;
+  try {
+    return t(key);
+  } catch {
+    return action;
   }
 }
 
-function entityLabel(entityType: string) {
-  switch (entityType) {
-    case "appointment":
-      return "Termin";
-    case "client":
-      return "Klijent";
-    case "employee":
-      return "Zaposlenik";
-    case "service":
-      return "Usluga";
-    case "room":
-      return "Soba";
-    case "equipment":
-      return "Oprema";
-    case "service_room_mapping":
-      return "Usluge i sobe";
-    case "employee_service_mapping":
-      return "Zaposlenici i usluge";
-    case "service_equipment_mapping":
-      return "Usluge i oprema";
-    case "salon_working_hours":
-      return "Radno vrijeme";
-    case "service_group_limit":
-      return "Group limits";
-    default:
-      return entityType;
+function entityLabel(entityType: string, t: ReturnType<typeof getTranslator>) {
+  const key = `auditLog.entities.${entityType}` as Parameters<typeof t>[0];
+
+  try {
+    return t(key);
+  } catch {
+    return entityType;
   }
 }
 
 export default async function AuditLogPage() {
   await requireAdminForSettings();
 
-  const logs = await getAuditLogs(300);
+  const [logs, salonSettings] = await Promise.all([
+    getAuditLogs(300),
+    getSalonSettings(),
+  ]);
+
+  const t = getTranslator(salonSettings?.language);
+  const locale = getLocaleFromLanguage(salonSettings?.language);
+  const timeZone = salonSettings?.timezone || "Europe/Zagreb";
 
   return (
     <PageShell maxWidth="max-w-7xl">
       <PageHeader
-        title="Audit log"
-        description="Pregled svih važnih akcija u sustavu."
+        title={t("auditLog.title")}
+        description={t("auditLog.description")}
         actions={
           <Link
             href="/dashboard/settings"
             className="inline-flex rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg"
           >
-            Natrag
+            {t("common.back")}
           </Link>
         }
       />
 
-      <PageSection title="Zapisnik aktivnosti">
+      <PageSection title={t("auditLog.sectionTitle")}>
         <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
           {logs.length === 0 ? (
             <EmptyStateCard
-              title="Nema zapisa"
-              description="Još nema zabilježenih akcija u sustavu."
+              title={t("auditLog.emptyTitle")}
+              description={t("auditLog.emptyDescription")}
             />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead className="bg-app-table-head">
                   <tr className="text-left text-sm text-app-muted">
-                    <th className="px-4 py-3 font-semibold">Datum i vrijeme</th>
-                    <th className="px-4 py-3 font-semibold">Akcija</th>
-                    <th className="px-4 py-3 font-semibold">Korisnik</th>
-                    <th className="px-4 py-3 font-semibold">Entitet</th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("auditLog.table.dateTime")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("auditLog.table.action")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("auditLog.table.user")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("auditLog.table.entity")}
+                    </th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {logs.map((log) => (
                     <tr
@@ -160,18 +104,21 @@ export default async function AuditLogPage() {
                       className="border-t border-app-soft text-sm transition hover:bg-app-card-alt"
                     >
                       <td className="px-4 py-4 text-app-text">
-                        {formatDateTime(log.created_at)}
+                        {formatDateTime(log.created_at, locale, timeZone)}
                       </td>
+
                       <td className="px-4 py-4 text-app-text">
-                        {actionLabel(log.action)}
+                        {actionLabel(log.action, t)}
                       </td>
+
                       <td className="px-4 py-4 text-app-text">
                         {log.actor_display_name ||
                           log.actor_email ||
-                          "Nepoznato"}
+                          t("auditLog.unknown")}
                       </td>
+
                       <td className="px-4 py-4 text-app-text">
-                        {entityLabel(log.entity_type)}
+                        {entityLabel(log.entity_type, t)}
                         {log.entity_label ? (
                           <span className="text-app-muted">
                             {" "}

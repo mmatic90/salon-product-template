@@ -6,6 +6,7 @@ import DefaultScheduleRangeForm from "./default-schedule-range-form";
 import OverrideForm from "./override-form";
 import OverrideList from "./override-list";
 import { requireAdminForScheduleManagement } from "@/lib/page-guards";
+import InfoTooltip from "@/components/info-tooltip";
 
 export default async function EmployeeSchedulePage({
   params,
@@ -113,12 +114,13 @@ export default async function EmployeeSchedulePage({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold text-app-text">
-              Default raspored po danima
-            </h2>
-            <p className="mt-2 text-sm text-app-muted">
-              Ovaj raspored vrijedi dok ne postoji override za određeni datum.
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-app-text">
+                Default raspored po danima
+              </h2>
+
+              <InfoTooltip text="Ovdje postavljaš normalni tjedni raspored djelatnika. Na primjer: ponedjeljak–petak 08:00–16:00. Ovaj raspored se koristi automatski za sve dane osim ako za određeni datum postoji override." />
+            </div>
 
             <div className="mt-6">
               <DefaultScheduleForm
@@ -129,12 +131,13 @@ export default async function EmployeeSchedulePage({
           </div>
 
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold text-app-text">
-              Brza primjena na raspon dana
-            </h2>
-            <p className="mt-2 text-sm text-app-muted">
-              Primijeni isto radno vrijeme na više dana u tjednu odjednom.
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-app-text">
+                Brza primjena na raspon dana
+              </h2>
+
+              <InfoTooltip text="Koristi ovo kada djelatnik ima isto radno vrijeme kroz više dana. Na primjer: označi ponedjeljak–petak i postavi 08:00–16:00 odjednom." />
+            </div>
 
             <div className="mt-6">
               <DefaultScheduleRangeForm
@@ -147,12 +150,13 @@ export default async function EmployeeSchedulePage({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold text-app-text">
-              Dodaj override
-            </h2>
-            <p className="mt-2 text-sm text-app-muted">
-              Koristi za promjenu smjene, slobodan dan, godišnji ili bolovanje.
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-app-text">
+                Dodaj override / iznimku
+              </h2>
+
+              <InfoTooltip text="Override se koristi za jedan konkretan datum. Primjeri: djelatnik je na godišnjem, bolestan je, ima slobodan dan ili taj dan radi drugačije radno vrijeme." />
+            </div>
 
             <div className="mt-6">
               <OverrideForm employeeId={data.employee.id} />
@@ -160,12 +164,13 @@ export default async function EmployeeSchedulePage({
           </div>
 
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold text-app-text">
-              Postojeći overrideovi
-            </h2>
-            <p className="mt-2 text-sm text-app-muted">
-              Pregled i brisanje overrideova za ovog zaposlenika.
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-app-text">
+                Postojeći overrideovi
+              </h2>
+
+              <InfoTooltip text="Ovdje vidiš sve posebne datume koji mijenjaju normalni raspored djelatnika. Ako obrišeš override, sustav se vraća na defaultni raspored za taj dan." />
+            </div>
 
             <div className="mt-6">
               <OverrideList

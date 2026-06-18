@@ -12,6 +12,22 @@ import { toast } from "sonner";
 
 type Props = {
   employees: EmployeeItem[];
+  labels: {
+    editHint: string;
+    saveChangesText: string;
+    reset: string;
+    saving: string;
+    saveChanges: string;
+    name: string;
+    email: string;
+    phone: string;
+    color: string;
+    active: string;
+    inactive: string;
+    actions: string;
+    resetPassword: string;
+    deactivate: string;
+  };
 };
 
 type EditableEmployee = {
@@ -34,7 +50,7 @@ function toEditable(employee: EmployeeItem): EditableEmployee {
   };
 }
 
-export default function EmployeesTable({ employees }: Props) {
+export default function EmployeesTable({ employees, labels }: Props) {
   const initialItems = useMemo(() => employees.map(toEditable), [employees]);
 
   const [items, setItems] = useState<EditableEmployee[]>(initialItems);
@@ -117,8 +133,11 @@ export default function EmployeesTable({ employees }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-app-muted">
-          Uredi djelatnike pa klikni{" "}
-          <span className="font-medium text-app-text">Spremi izmjene</span>.
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -129,7 +148,7 @@ export default function EmployeesTable({ employees }: Props) {
             className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
@@ -138,25 +157,25 @@ export default function EmployeesTable({ employees }: Props) {
             disabled={pending || !hasChanges}
             className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-2xl border border-app-soft">
         <table className="min-w-full border-collapse">
           <thead className="bg-app-table-head">
             <tr className="text-left text-sm text-app-muted">
-              <th className="px-4 py-3 font-semibold">Ime</th>
-              <th className="px-4 py-3 font-semibold">Email</th>
-              <th className="px-4 py-3 font-semibold">Telefon</th>
-              <th className="px-4 py-3 font-semibold">Boja</th>
-              <th className="px-4 py-3 font-semibold">Aktivno</th>
-              <th className="px-4 py-3 font-semibold">Akcije</th>
+              <th className="px-4 py-3 font-semibold">{labels.name}</th>
+              <th className="px-4 py-3 font-semibold">{labels.email}</th>
+              <th className="px-4 py-3 font-semibold">{labels.phone}</th>
+              <th className="px-4 py-3 font-semibold">{labels.color}</th>
+              <th className="px-4 py-3 font-semibold">{labels.active}</th>
+              <th className="px-4 py-3 font-semibold">{labels.actions}</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="bg-app-card">
             {items.map((employee) => (
               <tr
                 key={employee.id}
@@ -168,7 +187,7 @@ export default function EmployeesTable({ employees }: Props) {
                     onChange={(e) =>
                       updateItem(employee.id, "display_name", e.target.value)
                     }
-                    className="min-w-[220px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none"
+                    className="min-w-[220px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none transition focus:border-app-accent"
                   />
                 </td>
 
@@ -178,7 +197,7 @@ export default function EmployeesTable({ employees }: Props) {
                     onChange={(e) =>
                       updateItem(employee.id, "email", e.target.value)
                     }
-                    className="min-w-[240px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none"
+                    className="min-w-[240px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none transition focus:border-app-accent"
                   />
                 </td>
 
@@ -188,7 +207,7 @@ export default function EmployeesTable({ employees }: Props) {
                     onChange={(e) =>
                       updateItem(employee.id, "phone", e.target.value)
                     }
-                    className="min-w-[180px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none"
+                    className="min-w-[180px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none transition focus:border-app-accent"
                   />
                 </td>
 
@@ -214,6 +233,7 @@ export default function EmployeesTable({ employees }: Props) {
                     type="button"
                     role="switch"
                     aria-checked={employee.is_active}
+                    title={employee.is_active ? labels.active : labels.inactive}
                     onClick={() =>
                       updateItem(employee.id, "is_active", !employee.is_active)
                     }
@@ -238,7 +258,7 @@ export default function EmployeesTable({ employees }: Props) {
                       className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-3 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
                     >
                       <KeyRound className="h-4 w-4" />
-                      Reset lozinke
+                      {labels.resetPassword}
                     </button>
 
                     <button
@@ -252,7 +272,7 @@ export default function EmployeesTable({ employees }: Props) {
                       className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50"
                     >
                       <UserX className="h-4 w-4" />
-                      Deaktiviraj
+                      {labels.deactivate}
                     </button>
                   </div>
                 </td>

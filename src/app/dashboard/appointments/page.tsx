@@ -2,11 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAppointmentsByDate } from "@/features/appointments/queries";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 import {
   formatDateLabel,
   formatTime,
   getTodayLocalDate,
   statusLabel,
+  getLocaleFromLanguage,
 } from "@/lib/utils";
 import DateQueryPicker from "@/components/date-query-picker";
 import AppointmentStatusActions from "@/components/appointment-status-actions";
@@ -34,6 +37,10 @@ export default async function AppointmentsPage({
     redirect("/login");
   }
 
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
+  const locale = getLocaleFromLanguage(salonSettings?.language);
+
   const resolvedSearchParams = await searchParams;
   const selectedDate = resolvedSearchParams.date || getTodayLocalDate();
 
@@ -45,9 +52,12 @@ export default async function AppointmentsPage({
         <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-app-text">Termini</h1>
+              <h1 className="text-3xl font-bold text-app-text">
+                {t("appointments.title")}
+              </h1>
               <p className="mt-2 text-app-muted">
-                Pregled termina za {formatDateLabel(selectedDate)}
+                {t("appointments.description")}{" "}
+                {formatDateLabel(selectedDate, locale)}
               </p>
             </div>
 
@@ -61,7 +71,7 @@ export default async function AppointmentsPage({
                 href={`/dashboard/appointments/new?date=${selectedDate}`}
                 className="inline-flex h-[42px] items-center justify-center rounded-xl bg-app-accent px-4 py-2 font-medium text-white transition hover:opacity-90"
               >
-                Novi termin
+                {t("appointments.newAppointment")}
               </Link>
             </div>
           </div>
@@ -70,14 +80,14 @@ export default async function AppointmentsPage({
         <div className="overflow-hidden rounded-2xl border border-app-soft bg-app-card shadow-sm">
           {appointments.length === 0 ? (
             <EmptyStateCard
-              title="Nema termina za odabrani datum"
-              description="Promijeni datum ili dodaj novi termin kako bi se prikazao sadržaj."
+              title={t("appointments.emptyTitle")}
+              description={t("appointments.emptyDescription")}
               action={
                 <Link
                   href={`/dashboard/appointments/new?date=${selectedDate}`}
                   className="inline-flex rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                 >
-                  Dodaj novi termin
+                  {t("appointments.addNewAppointment")}
                 </Link>
               }
             />
@@ -86,14 +96,30 @@ export default async function AppointmentsPage({
               <table className="min-w-full border-collapse">
                 <thead className="bg-app-table-head">
                   <tr className="text-left text-sm text-app-muted">
-                    <th className="px-4 py-3 font-semibold">Vrijeme</th>
-                    <th className="px-4 py-3 font-semibold">Klijent</th>
-                    <th className="px-4 py-3 font-semibold">Usluga</th>
-                    <th className="px-4 py-3 font-semibold">Zaposlenik</th>
-                    <th className="px-4 py-3 font-semibold">Soba</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Napomena</th>
-                    <th className="px-4 py-3 font-semibold">Akcije</th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.time")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.client")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.service")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.employee")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.room")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.status")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.note")}
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      {t("appointments.table.actions")}
+                    </th>
                   </tr>
                 </thead>
 
@@ -108,10 +134,11 @@ export default async function AppointmentsPage({
                       appointment.service?.service_group ?? null;
                     const employeeName =
                       appointment.employee?.display_name ??
-                      "Nepoznati zaposlenik";
+                      t("appointments.unknownEmployee");
                     const employeeColor =
                       appointment.employee?.color_hex || "#999999";
-                    const roomName = appointment.room?.name ?? "Nepoznata soba";
+                    const roomName =
+                      appointment.room?.name ?? t("appointments.unknownRoom");
 
                     return (
                       <tr
@@ -150,7 +177,7 @@ export default async function AppointmentsPage({
                           </div>
                           {serviceGroup ? (
                             <div className="mt-1 text-app-muted">
-                              Grupa: {serviceGroup}
+                              {t("appointments.serviceGroup")}: {serviceGroup}
                             </div>
                           ) : null}
                         </td>
@@ -173,7 +200,10 @@ export default async function AppointmentsPage({
 
                         <td className="px-4 py-4 align-top">
                           <span className="rounded-full bg-app-bg px-3 py-1 text-xs font-medium text-app-text">
-                            {statusLabel(appointment.status)}
+                            {statusLabel(
+                              appointment.status,
+                              salonSettings?.language,
+                            )}
                           </span>
                         </td>
 
@@ -182,6 +212,7 @@ export default async function AppointmentsPage({
                             appointment.client_note ||
                             "-"}
                         </td>
+
                         <td className="px-4 py-4 align-top">
                           <div className="flex flex-col gap-2">
                             <AppointmentRowActions

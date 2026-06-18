@@ -29,6 +29,45 @@ import type { AppointmentServiceInput } from "@/features/appointments/types";
 import { addMinutesToTimeString } from "@/features/appointments/time-helpers";
 import SmartAvailability from "@/app/dashboard/appointments/new/smart-availability";
 
+type Labels = {
+  date: string;
+  startTime: string;
+  client: string;
+  clientName: string;
+  phone: string;
+  email: string;
+  services: string;
+  primaryGroup: string;
+  employee: string;
+  room: string;
+  firstChooseServices: string;
+  loadingAvailability: string;
+  noAvailableEmployees: string;
+  chooseEmployee: string;
+  chooseRoom: string;
+  priorityRoom: string;
+  noEmployeesWarning: string;
+  totalDuration: string;
+  endsAt: string;
+  status: string;
+  scheduled: string;
+  completed: string;
+  cancelled: string;
+  noShow: string;
+  clientNote: string;
+  internalNote: string;
+  saving: string;
+  saveChanges: string;
+  cancelling: string;
+  cancelAppointment: string;
+  cancelError: string;
+  fallbackSelectedEmployee: string;
+  fallbackSelectedRoom: string;
+  employeeAutoChanged: string;
+  roomAutoChanged: string;
+  availabilityFetchError: string;
+};
+
 type Props = {
   appointment: AppointmentEditItem;
   services: AppointmentFormService[];
@@ -37,6 +76,7 @@ type Props = {
   serviceRooms: AppointmentFormServiceRoom[];
   employeeServices: AppointmentFormEmployeeService[];
   clients: ClientComboboxItem[];
+  labels: Labels;
 };
 
 function parseServicesJson(raw: string): AppointmentServiceInput[] {
@@ -56,6 +96,18 @@ function parseServicesJson(raw: string): AppointmentServiceInput[] {
   }
 }
 
+const fieldClass =
+  "w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none transition focus:border-app-accent focus:ring-2 focus:ring-app-accent/15";
+
+const readonlyFieldClass =
+  "w-full rounded-xl border border-app-soft bg-app-card-alt px-4 py-3 text-app-text outline-none";
+
+const messageWarnClass =
+  "rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800";
+
+const messageErrorClass =
+  "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700";
+
 export default function EditAppointmentForm({
   appointment,
   services,
@@ -64,6 +116,7 @@ export default function EditAppointmentForm({
   serviceRooms,
   employeeServices,
   clients,
+  labels,
 }: Props) {
   const router = useRouter();
   const [isCancelling, startCancelTransition] = useTransition();
@@ -188,7 +241,7 @@ export default function EditAppointmentForm({
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || "Greška pri dohvaćanju dostupnosti.");
+          throw new Error(result.error || labels.availabilityFetchError);
         }
 
         if (!cancelled) {
@@ -200,7 +253,7 @@ export default function EditAppointmentForm({
           setAvailabilityError(
             error instanceof Error
               ? error.message
-              : "Greška pri dohvaćanju dostupnosti.",
+              : labels.availabilityFetchError,
           );
         }
       } finally {
@@ -215,7 +268,7 @@ export default function EditAppointmentForm({
     return () => {
       cancelled = true;
     };
-  }, [selectedDate]);
+  }, [selectedDate, labels.availabilityFetchError]);
 
   const primaryServiceId = serviceItems[0]?.service_id || "";
 
@@ -356,11 +409,9 @@ export default function EditAppointmentForm({
 
       const employeeName =
         filteredEmployees.find((employee) => employee.id === nextEmployeeId)
-          ?.display_name ?? "odabranog zaposlenika";
+          ?.display_name ?? labels.fallbackSelectedEmployee;
 
-      notices.push(
-        `Zaposlenik je automatski promijenjen na "${employeeName}".`,
-      );
+      notices.push(`${labels.employeeAutoChanged} "${employeeName}".`);
     }
 
     let nextRoomId = selectedRoomId;
@@ -400,9 +451,9 @@ export default function EditAppointmentForm({
 
       const roomName =
         filteredRooms.find((room) => room.id === nextRoomId)?.name ??
-        "odabranu sobu";
+        labels.fallbackSelectedRoom;
 
-      notices.push(`Soba je automatski promijenjena na "${roomName}".`);
+      notices.push(`${labels.roomAutoChanged} "${roomName}".`);
     }
 
     setServiceChangeNotice(notices.join(" "));
@@ -416,6 +467,10 @@ export default function EditAppointmentForm({
     filteredRooms,
     selectedPrimaryService,
     workingEmployeeIdSet,
+    labels.fallbackSelectedEmployee,
+    labels.fallbackSelectedRoom,
+    labels.employeeAutoChanged,
+    labels.roomAutoChanged,
   ]);
 
   function handleCancel() {
@@ -426,7 +481,7 @@ export default function EditAppointmentForm({
         router.refresh();
       } catch (error) {
         console.error(error);
-        alert("Greška pri otkazivanju termina.");
+        alert(labels.cancelError);
       }
     });
   }
@@ -441,7 +496,7 @@ export default function EditAppointmentForm({
             htmlFor="appointment_date"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Datum
+            {labels.date}
           </label>
           <input
             id="appointment_date"
@@ -449,7 +504,7 @@ export default function EditAppointmentForm({
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+            className={fieldClass}
             required
           />
         </div>
@@ -459,7 +514,7 @@ export default function EditAppointmentForm({
             htmlFor="start_time"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Vrijeme početka
+            {labels.startTime}
           </label>
           <input
             id="start_time"
@@ -467,7 +522,7 @@ export default function EditAppointmentForm({
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+            className={fieldClass}
             required
           />
         </div>
@@ -475,7 +530,7 @@ export default function EditAppointmentForm({
 
       <div>
         <label className="mb-1 block text-sm font-medium text-app-text">
-          Klijent
+          {labels.client}
         </label>
         <ClientCombobox
           clients={clients}
@@ -505,7 +560,7 @@ export default function EditAppointmentForm({
             htmlFor="client_name"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Ime klijenta
+            {labels.clientName}
           </label>
           <input
             id="client_name"
@@ -516,7 +571,7 @@ export default function EditAppointmentForm({
               setSelectedClientId("");
               setClientName(e.target.value);
             }}
-            className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+            className={fieldClass}
             required
           />
         </div>
@@ -526,7 +581,7 @@ export default function EditAppointmentForm({
             htmlFor="client_phone"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Telefon
+            {labels.phone}
           </label>
           <input
             id="client_phone"
@@ -534,7 +589,7 @@ export default function EditAppointmentForm({
             type="text"
             value={clientPhone}
             onChange={(e) => setClientPhone(e.target.value)}
-            className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+            className={fieldClass}
           />
         </div>
       </div>
@@ -544,7 +599,7 @@ export default function EditAppointmentForm({
           htmlFor="client_email"
           className="mb-1 block text-sm font-medium text-app-text"
         >
-          Email
+          {labels.email}
         </label>
         <input
           id="client_email"
@@ -552,14 +607,14 @@ export default function EditAppointmentForm({
           type="email"
           value={clientEmail}
           onChange={(e) => setClientEmail(e.target.value)}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className={fieldClass}
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 rounded-2xl border border-app-soft bg-app-card p-4 md:p-5">
         <div>
           <label className="mb-1 block text-sm font-medium text-app-text">
-            Usluge
+            {labels.services}
           </label>
           <AppointmentServicesEditor
             services={services}
@@ -568,7 +623,7 @@ export default function EditAppointmentForm({
           />
           {selectedPrimaryService?.service_group ? (
             <p className="mt-2 text-sm text-app-muted">
-              Primarna grupa: {selectedPrimaryService.service_group}
+              {labels.primaryGroup}: {selectedPrimaryService.service_group}
             </p>
           ) : null}
         </div>
@@ -579,14 +634,14 @@ export default function EditAppointmentForm({
               htmlFor="employee_id"
               className="mb-1 block text-sm font-medium text-app-text"
             >
-              Zaposlenik
+              {labels.employee}
             </label>
             <select
               id="employee_id"
               name="employee_id"
               value={selectedEmployeeId}
               onChange={(e) => setSelectedEmployeeId(e.target.value)}
-              className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+              className={fieldClass}
               required
               disabled={
                 allSelectedServiceIds.length === 0 || availabilityLoading
@@ -594,12 +649,12 @@ export default function EditAppointmentForm({
             >
               <option value="">
                 {allSelectedServiceIds.length === 0
-                  ? "Prvo odaberi usluge"
+                  ? labels.firstChooseServices
                   : availabilityLoading
-                    ? "Učitavanje dostupnosti..."
+                    ? labels.loadingAvailability
                     : filteredEmployees.length === 0
-                      ? "Nema dostupnih zaposlenika"
-                      : "Odaberi zaposlenika"}
+                      ? labels.noAvailableEmployees
+                      : labels.chooseEmployee}
               </option>
               {filteredEmployees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
@@ -614,21 +669,21 @@ export default function EditAppointmentForm({
               htmlFor="room_id"
               className="mb-1 block text-sm font-medium text-app-text"
             >
-              Soba
+              {labels.room}
             </label>
             <select
               id="room_id"
               name="room_id"
               value={selectedRoomId}
               onChange={(e) => setSelectedRoomId(e.target.value)}
-              className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+              className={fieldClass}
               required
               disabled={allSelectedServiceIds.length === 0}
             >
               <option value="">
                 {allSelectedServiceIds.length > 0
-                  ? "Odaberi sobu"
-                  : "Prvo odaberi usluge"}
+                  ? labels.chooseRoom
+                  : labels.firstChooseServices}
               </option>
               {filteredRooms.map((room) => (
                 <option key={room.id} value={room.id}>
@@ -639,8 +694,7 @@ export default function EditAppointmentForm({
 
             {selectedPrimaryService?.priority_room ? (
               <p className="mt-2 text-sm text-app-muted">
-                Prioritetna soba primarne usluge:{" "}
-                {selectedPrimaryService.priority_room}
+                {labels.priorityRoom}: {selectedPrimaryService.priority_room}
               </p>
             ) : null}
           </div>
@@ -660,48 +714,41 @@ export default function EditAppointmentForm({
       </div>
 
       {availabilityError ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {availabilityError}
-        </div>
+        <div className={messageErrorClass}>{availabilityError}</div>
       ) : null}
 
       {allSelectedServiceIds.length > 0 &&
       !availabilityLoading &&
       filteredEmployees.length === 0 ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Nema zaposlenika koji mogu raditi sve odabrane usluge na odabrani
-          datum.
-        </div>
+        <div className={messageWarnClass}>{labels.noEmployeesWarning}</div>
       ) : null}
 
       {serviceChangeNotice ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          {serviceChangeNotice}
-        </div>
+        <div className={messageWarnClass}>{serviceChangeNotice}</div>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <div>
           <label className="mb-1 block text-sm font-medium text-app-text">
-            Ukupno trajanje (minute)
+            {labels.totalDuration}
           </label>
           <input
             type="number"
             value={totalDuration}
             readOnly
-            className="w-full rounded-xl border border-app-soft bg-app-card-alt px-4 py-3 text-app-text outline-none"
+            className={readonlyFieldClass}
           />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-app-text">
-            Završava u
+            {labels.endsAt}
           </label>
           <input
             type="time"
             value={calculatedEndTime}
             readOnly
-            className="w-full rounded-xl border border-app-soft bg-app-card-alt px-4 py-3 text-app-text outline-none"
+            className={readonlyFieldClass}
           />
         </div>
 
@@ -710,18 +757,18 @@ export default function EditAppointmentForm({
             htmlFor="status"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Status
+            {labels.status}
           </label>
           <select
             id="status"
             name="status"
             defaultValue={state.values.status}
-            className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+            className={fieldClass}
           >
-            <option value="scheduled">Zakazan</option>
-            <option value="completed">Odrađen</option>
-            <option value="cancelled">Otkazan</option>
-            <option value="no_show">Nije došao</option>
+            <option value="scheduled">{labels.scheduled}</option>
+            <option value="completed">{labels.completed}</option>
+            <option value="cancelled">{labels.cancelled}</option>
+            <option value="no_show">{labels.noShow}</option>
           </select>
         </div>
       </div>
@@ -731,7 +778,7 @@ export default function EditAppointmentForm({
           htmlFor="client_note"
           className="mb-1 block text-sm font-medium text-app-text"
         >
-          Napomena za klijenta
+          {labels.clientNote}
         </label>
         <textarea
           id="client_note"
@@ -739,7 +786,7 @@ export default function EditAppointmentForm({
           rows={3}
           value={clientNote}
           onChange={(e) => setClientNote(e.target.value)}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className={fieldClass}
         />
       </div>
 
@@ -748,7 +795,7 @@ export default function EditAppointmentForm({
           htmlFor="internal_note"
           className="mb-1 block text-sm font-medium text-app-text"
         >
-          Interna napomena
+          {labels.internalNote}
         </label>
         <textarea
           id="internal_note"
@@ -756,14 +803,12 @@ export default function EditAppointmentForm({
           rows={3}
           value={internalNote}
           onChange={(e) => setInternalNote(e.target.value)}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className={fieldClass}
         />
       </div>
 
       {state.error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <div className={messageErrorClass}>{state.error}</div>
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
@@ -773,7 +818,7 @@ export default function EditAppointmentForm({
           disabled={isCancelling}
           className="rounded-xl border border-red-300 bg-white px-5 py-3 font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50"
         >
-          {isCancelling ? "Otkazivanje..." : "Otkaži termin"}
+          {isCancelling ? labels.cancelling : labels.cancelAppointment}
         </button>
 
         <button
@@ -787,7 +832,7 @@ export default function EditAppointmentForm({
           }
           className="rounded-xl bg-app-accent px-5 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Spremanje..." : "Spremi izmjene"}
+          {pending ? labels.saving : labels.saveChanges}
         </button>
       </div>
 

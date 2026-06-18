@@ -5,6 +5,8 @@ import EmptyStateCard from "@/components/empty-state-card";
 import PageShell from "@/components/page-shell";
 import PageHeader from "@/components/page-header";
 import PageSection from "@/components/page-section";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -18,56 +20,70 @@ function StatCard({ label, value }: { label: string; value: number }) {
 export default async function ReportsPage() {
   await requireAdminForReports();
 
-  const data = await getReportsDashboardData();
+  const [data, salonSettings] = await Promise.all([
+    getReportsDashboardData(),
+    getSalonSettings(),
+  ]);
+
+  const t = getTranslator(salonSettings?.language);
+
   const hasAnyReportData =
     data.summary.today > 0 || data.summary.week > 0 || data.summary.month > 0;
 
   return (
     <PageShell maxWidth="max-w-7xl">
       <PageHeader
-        title="Izvještaji"
-        description="Pregled termina, statusa, zaposlenika i usluga."
+        title={t("reports.title")}
+        description={t("reports.description")}
       />
 
       {!hasAnyReportData ? (
         <EmptyStateCard
-          title="Još nema podataka za izvještaje"
-          description="Kad počneš unositi i obrađivati termine, ovdje će se prikazivati statistika poslovanja."
+          title={t("reports.emptyTitle")}
+          description={t("reports.emptyDescription")}
         />
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Termini danas" value={data.summary.today} />
-        <StatCard label="Termini ovaj tjedan" value={data.summary.week} />
-        <StatCard label="Termini ovaj mjesec" value={data.summary.month} />
+        <StatCard label={t("reports.today")} value={data.summary.today} />
+        <StatCard label={t("reports.week")} value={data.summary.week} />
+        <StatCard label={t("reports.month")} value={data.summary.month} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <PageSection title="Statusi termina">
+        <PageSection title={t("reports.statuses")}>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-[#d8d0c3] px-4 py-3">
-              <div className="text-sm text-app-text">Zakazani</div>
+              <div className="text-sm text-app-text">
+                {t("reports.statusScheduled")}
+              </div>
               <div className="mt-1 text-2xl font-bold text-app-text">
                 {data.statusCounts.scheduled}
               </div>
             </div>
 
             <div className="rounded-xl bg-[#776B5D] px-4 py-3">
-              <div className="text-sm text-white/90">Odrađeni</div>
+              <div className="text-sm text-white/90">
+                {t("reports.statusCompleted")}
+              </div>
               <div className="mt-1 text-2xl font-bold text-white">
                 {data.statusCounts.completed}
               </div>
             </div>
 
             <div className="rounded-xl bg-[#c9beb2] px-4 py-3">
-              <div className="text-sm text-app-text">Otkazani</div>
+              <div className="text-sm text-app-text">
+                {t("reports.statusCancelled")}
+              </div>
               <div className="mt-1 text-2xl font-bold text-app-text">
                 {data.statusCounts.cancelled}
               </div>
             </div>
 
             <div className="rounded-xl bg-[#4B4844] px-4 py-3">
-              <div className="text-sm text-white/90">No-show</div>
+              <div className="text-sm text-white/90">
+                {t("reports.statusNoShow")}
+              </div>
               <div className="mt-1 text-2xl font-bold text-white">
                 {data.statusCounts.no_show}
               </div>
@@ -75,7 +91,7 @@ export default async function ReportsPage() {
           </div>
         </PageSection>
 
-        <PageSection title="Termini zadnjih 7 dana">
+        <PageSection title={t("reports.last7Days")}>
           <div className="mt-4 space-y-3">
             {data.last7Days.map((day) => (
               <div
@@ -95,7 +111,7 @@ export default async function ReportsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <PageSection title="Top zaposlenici">
+        <PageSection title={t("reports.topEmployees")}>
           <div className="mt-4 space-y-3">
             {data.topEmployees.length > 0 ? (
               data.topEmployees.map((item, index) => (
@@ -107,20 +123,20 @@ export default async function ReportsPage() {
                     {item.name}
                   </div>
                   <div className="text-sm text-app-muted">
-                    {item.count} termina
+                    {item.count} {t("reports.appointments")}
                   </div>
                 </div>
               ))
             ) : (
               <EmptyStateCard
-                title="Nema podataka o zaposlenicima"
-                description="Još nema dovoljno termina u odabranom rasponu da bi se prikazala statistika zaposlenika."
+                title={t("reports.noEmployeesTitle")}
+                description={t("reports.noEmployeesDescription")}
               />
             )}
           </div>
         </PageSection>
 
-        <PageSection title="Top usluge">
+        <PageSection title={t("reports.topServices")}>
           <div className="mt-4 space-y-3">
             {data.topServices.length > 0 ? (
               data.topServices.map((item, index) => (
@@ -132,14 +148,14 @@ export default async function ReportsPage() {
                     {item.name}
                   </div>
                   <div className="text-sm text-app-muted">
-                    {item.count} termina
+                    {item.count} {t("reports.appointments")}
                   </div>
                 </div>
               ))
             ) : (
               <EmptyStateCard
-                title="Nema podataka o uslugama"
-                description="Još nema dovoljno termina u odabranom rasponu da bi se prikazala statistika usluga."
+                title={t("reports.noServicesTitle")}
+                description={t("reports.noServicesDescription")}
               />
             )}
           </div>

@@ -22,6 +22,14 @@ type Props = {
   services: ServiceItem[];
   equipment: EquipmentItem[];
   mappings: ServiceEquipmentMappingRow[];
+  labels: {
+    editHint: string;
+    saveChangesText: string;
+    reset: string;
+    saving: string;
+    saveChanges: string;
+    service: string;
+  };
 };
 
 type EditableMapping = {
@@ -33,6 +41,7 @@ export default function ServiceEquipmentTable({
   services,
   equipment,
   mappings,
+  labels,
 }: Props) {
   const activeServices = useMemo(
     () => services.filter((service) => service.is_active),
@@ -77,32 +86,6 @@ export default function ServiceEquipmentTable({
     );
   }
 
-  function selectAllEquipment(serviceId: string) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.service_id === serviceId
-          ? {
-              ...item,
-              equipment_ids: activeEquipment.map((e) => e.id),
-            }
-          : item,
-      ),
-    );
-  }
-
-  function clearAllEquipment(serviceId: string) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.service_id === serviceId
-          ? {
-              ...item,
-              equipment_ids: [],
-            }
-          : item,
-      ),
-    );
-  }
-
   function resetChanges() {
     setItems(initialItems);
   }
@@ -110,6 +93,7 @@ export default function ServiceEquipmentTable({
   function saveChanges() {
     startTransition(async () => {
       const result = await bulkUpdateServiceEquipmentAction(items);
+
       if (result.ok) {
         toast.success(result.message);
       } else {
@@ -121,9 +105,12 @@ export default function ServiceEquipmentTable({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-neutral-600">
-          Označi opremu potrebnu za uslugu pa klikni{" "}
-          <span className="font-medium">Spremi izmjene</span>.
+        <div className="text-sm text-app-muted">
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -131,28 +118,28 @@ export default function ServiceEquipmentTable({
             type="button"
             onClick={resetChanges}
             disabled={pending || !hasChanges}
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
             type="button"
             onClick={saveChanges}
             disabled={pending || !hasChanges}
-            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
 
-      <div className="hidden overflow-x-auto lg:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-app-soft lg:block">
         <table className="min-w-full border-collapse">
-          <thead className="bg-neutral-50">
-            <tr className="text-left text-sm text-neutral-600">
-              <th className="px-4 py-3 font-semibold">Usluga</th>
+          <thead className="bg-app-table-head">
+            <tr className="text-left text-sm text-app-muted">
+              <th className="px-4 py-3 font-semibold">{labels.service}</th>
               {activeEquipment.map((item) => (
                 <th
                   key={item.id}
@@ -164,19 +151,17 @@ export default function ServiceEquipmentTable({
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="bg-app-card">
             {activeServices.map((service) => {
               const item = items.find((row) => row.service_id === service.id);
 
               return (
                 <tr
                   key={service.id}
-                  className="border-t border-neutral-200 text-sm"
+                  className="border-t border-app-soft text-sm transition hover:bg-app-card-alt"
                 >
-                  <td className="px-4 py-4 font-medium">
-                    <div className="flex flex-col gap-2">
-                      <div>{service.name}</div>
-                    </div>
+                  <td className="px-4 py-4 font-medium text-app-text">
+                    {service.name}
                   </td>
 
                   {activeEquipment.map((equip) => {
@@ -189,7 +174,7 @@ export default function ServiceEquipmentTable({
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleEquipment(service.id, equip.id)}
-                          className="h-4 w-4"
+                          className="h-4 w-4 accent-[var(--color-app-accent)]"
                         />
                       </td>
                     );
@@ -208,13 +193,9 @@ export default function ServiceEquipmentTable({
           return (
             <div
               key={service.id}
-              className="rounded-2xl border border-neutral-200 p-4"
+              className="rounded-2xl border border-app-soft bg-app-card-alt p-4"
             >
-              <div className="flex flex-col gap-2">
-                <div className="font-medium text-neutral-900">
-                  {service.name}
-                </div>
-              </div>
+              <div className="font-medium text-app-text">{service.name}</div>
 
               <div className="mt-3 grid gap-2">
                 {activeEquipment.map((equip) => {
@@ -224,16 +205,16 @@ export default function ServiceEquipmentTable({
                   return (
                     <label
                       key={equip.id}
-                      className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2"
+                      className="flex items-center justify-between rounded-xl border border-app-soft bg-white px-3 py-2 transition hover:bg-app-bg"
                     >
-                      <span className="text-sm text-neutral-700">
+                      <span className="text-sm text-app-text">
                         {equip.name}
                       </span>
                       <input
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleEquipment(service.id, equip.id)}
-                        className="h-4 w-4"
+                        className="h-4 w-4 accent-[var(--color-app-accent)]"
                       />
                     </label>
                   );

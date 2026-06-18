@@ -29,8 +29,22 @@ export async function updateSalonSettingsAction(
   const address = normalizeNullableText(formData.get("address"));
   const websiteUrl = normalizeNullableText(formData.get("website_url"));
   const logoUrl = normalizeNullableText(formData.get("logo_url"));
+  const faviconUrl = normalizeNullableText(formData.get("favicon_url"));
+
   const primaryColor =
-    normalizeText(formData.get("primary_color")) || "#111827";
+    normalizeText(formData.get("primary_color")) || "#776B5D";
+  const secondaryColor =
+    normalizeText(formData.get("secondary_color")) || "#EBE3D5";
+  const accentColor = normalizeText(formData.get("accent_color")) || "#776B5D";
+  const backgroundColor =
+    normalizeText(formData.get("background_color")) || "#F3EEEA";
+  const textColor = normalizeText(formData.get("text_color")) || "#2B2A28";
+  const mutedColor = normalizeText(formData.get("muted_color")) || "#5A5753";
+  const cardColor = normalizeText(formData.get("card_color")) || "#EBE3D5";
+  const cardAltColor =
+    normalizeText(formData.get("card_alt_color")) || "#F7F2EC";
+  const borderColor = normalizeText(formData.get("border_color")) || "#B0A695";
+
   const smsSignature = normalizeText(formData.get("sms_signature"));
   const timezone = normalizeText(formData.get("timezone")) || "Europe/Zagreb";
   const language = normalizeText(formData.get("language")) || "hr";
@@ -69,13 +83,23 @@ export async function updateSalonSettingsAction(
     address,
     website_url: websiteUrl,
     logo_url: logoUrl,
+    favicon_url: faviconUrl,
     primary_color: primaryColor,
+    secondary_color: secondaryColor,
+    accent_color: accentColor,
+    background_color: backgroundColor,
+    text_color: textColor,
+    muted_color: mutedColor,
+    card_color: cardColor,
+    card_alt_color: cardAltColor,
+    border_color: borderColor,
     sms_signature: smsSignature,
     timezone,
     language,
     updated_at: new Date().toISOString(),
   };
 
+  
   if (!existingSettings) {
     const { error } = await supabase.from("salon_settings").insert(payload);
 

@@ -8,7 +8,16 @@ export type SalonSettings = {
   address: string | null;
   website_url: string | null;
   logo_url: string | null;
+  favicon_url: string | null;
   primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  background_color: string;
+  text_color: string;
+  muted_color: string;
+  card_color: string;
+  card_alt_color: string;
+  border_color: string;
   sms_signature: string;
   timezone: string;
   language: string;

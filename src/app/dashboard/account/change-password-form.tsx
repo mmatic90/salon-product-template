@@ -7,9 +7,21 @@ import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   email: string;
+  labels: {
+    oldPassword: string;
+    newPassword: string;
+    repeatNewPassword: string;
+    saving: string;
+    changePassword: string;
+    fillAllFields: string;
+    passwordMinLength: string;
+    passwordsDoNotMatch: string;
+    oldPasswordWrong: string;
+    passwordChanged: string;
+  };
 };
 
-export default function ChangePasswordForm({ email }: Props) {
+export default function ChangePasswordForm({ email, labels }: Props) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -22,17 +34,17 @@ export default function ChangePasswordForm({ email }: Props) {
     e.preventDefault();
 
     if (!oldPassword || !newPassword || !repeatPassword) {
-      toast.error("Ispuni sva polja za promjenu lozinke.");
+      toast.error(labels.fillAllFields);
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error("Nova lozinka mora imati barem 6 znakova.");
+      toast.error(labels.passwordMinLength);
       return;
     }
 
     if (newPassword !== repeatPassword) {
-      toast.error("Nova lozinka i ponovljena lozinka se ne podudaraju.");
+      toast.error(labels.passwordsDoNotMatch);
       return;
     }
 
@@ -45,7 +57,7 @@ export default function ChangePasswordForm({ email }: Props) {
       });
 
       if (verifyError) {
-        toast.error("Stara lozinka nije točna.");
+        toast.error(labels.oldPasswordWrong);
         return;
       }
 
@@ -65,9 +77,7 @@ export default function ChangePasswordForm({ email }: Props) {
         return;
       }
 
-      toast.success(
-        "Lozinka je promijenjena. Prijavi se ponovno novom lozinkom.",
-      );
+      toast.success(labels.passwordChanged);
       router.push("/login");
       router.refresh();
     } finally {
@@ -79,50 +89,50 @@ export default function ChangePasswordForm({ email }: Props) {
     <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
       <div className="md:col-span-2">
         <label className="mb-1 block text-sm font-medium text-app-text">
-          Stara lozinka
+          {labels.oldPassword}
         </label>
         <input
           type="password"
           value={oldPassword}
           onChange={(e) => setOldPassword(e.target.value)}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none transition focus:border-app-accent"
           required
         />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-app-text">
-          Nova lozinka
+          {labels.newPassword}
         </label>
         <input
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none transition focus:border-app-accent"
           required
         />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-app-text">
-          Ponovi novu lozinku
+          {labels.repeatNewPassword}
         </label>
         <input
           type="password"
           value={repeatPassword}
           onChange={(e) => setRepeatPassword(e.target.value)}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none transition focus:border-app-accent"
           required
         />
       </div>
 
-      <div className="md:col-span-2 flex justify-end">
+      <div className="flex justify-end md:col-span-2">
         <button
           type="submit"
           disabled={pending}
           className="rounded-xl bg-app-accent px-5 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Spremanje..." : "Promijeni lozinku"}
+          {pending ? labels.saving : labels.changePassword}
         </button>
       </div>
     </form>

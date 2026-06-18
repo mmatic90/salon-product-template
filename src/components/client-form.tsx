@@ -4,6 +4,15 @@ import Link from "next/link";
 import { useActionState } from "react";
 import type { ClientActionState } from "@/features/clients/actions";
 
+type ClientFormLabels = {
+  fullName: string;
+  phone: string;
+  email: string;
+  note: string;
+  internalNote: string;
+  saving: string;
+};
+
 type Props = {
   title: string;
   description: string;
@@ -15,6 +24,7 @@ type Props = {
   submitLabel: string;
   backHref?: string;
   backLabel?: string;
+  labels: ClientFormLabels;
 };
 
 export default function ClientForm({
@@ -24,7 +34,8 @@ export default function ClientForm({
   initialValues,
   submitLabel,
   backHref,
-  backLabel = "Natrag",
+  backLabel,
+  labels,
 }: Props) {
   const initialState: ClientActionState = {
     error: "",
@@ -57,7 +68,7 @@ export default function ClientForm({
             htmlFor="full_name"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Ime klijenta
+            {labels.fullName}
           </label>
           <input
             id="full_name"
@@ -74,7 +85,7 @@ export default function ClientForm({
             htmlFor="phone"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Telefon
+            {labels.phone}
           </label>
           <input
             id="phone"
@@ -90,7 +101,7 @@ export default function ClientForm({
             htmlFor="email"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Email
+            {labels.email}
           </label>
           <input
             id="email"
@@ -106,7 +117,7 @@ export default function ClientForm({
             htmlFor="note"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Bilješka
+            {labels.note}
           </label>
           <textarea
             id="note"
@@ -122,7 +133,7 @@ export default function ClientForm({
             htmlFor="internal_note"
             className="mb-1 block text-sm font-medium text-app-text"
           >
-            Interna napomena
+            {labels.internalNote}
           </label>
           <textarea
             id="internal_note"
@@ -145,7 +156,7 @@ export default function ClientForm({
             disabled={pending}
             className="rounded-xl bg-app-accent px-5 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : submitLabel}
+            {pending ? labels.saving : submitLabel}
           </button>
         </div>
       </form>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Pencil, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import type { ServiceItem } from "@/features/settings/types";
 import {
   bulkUpdateServicesAction,
@@ -12,6 +12,20 @@ import { toast } from "sonner";
 
 type Props = {
   services: ServiceItem[];
+  labels: {
+    editHint: string;
+    saveChangesText: string;
+    reset: string;
+    saving: string;
+    saveChanges: string;
+    name: string;
+    duration: string;
+    group: string;
+    priorityRoom: string;
+    active: string;
+    inactive: string;
+    actions: string;
+  };
 };
 
 type EditableService = {
@@ -34,7 +48,7 @@ function toEditable(service: ServiceItem): EditableService {
   };
 }
 
-export default function ServicesTable({ services }: Props) {
+export default function ServicesTable({ services, labels }: Props) {
   const initialItems = useMemo(() => services.map(toEditable), [services]);
 
   const [items, setItems] = useState<EditableService[]>(initialItems);
@@ -81,8 +95,11 @@ export default function ServicesTable({ services }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-app-muted">
-          Uredi podatke u tablici pa klikni{" "}
-          <span className="font-medium text-app-text">Spremi izmjene</span>.
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -93,7 +110,7 @@ export default function ServicesTable({ services }: Props) {
             className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
@@ -102,7 +119,7 @@ export default function ServicesTable({ services }: Props) {
             disabled={pending || !hasChanges}
             className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
@@ -111,12 +128,12 @@ export default function ServicesTable({ services }: Props) {
         <table className="min-w-full border-collapse">
           <thead className="bg-app-table-head">
             <tr className="text-left text-sm text-app-muted">
-              <th className="px-4 py-3 font-semibold">Naziv</th>
-              <th className="px-4 py-3 font-semibold">Trajanje</th>
-              <th className="px-4 py-3 font-semibold">Grupa</th>
-              <th className="px-4 py-3 font-semibold">Prioritetna soba</th>
-              <th className="px-4 py-3 font-semibold">Aktivno</th>
-              <th className="px-4 py-3 font-semibold">Akcije</th>
+              <th className="px-4 py-3 font-semibold">{labels.name}</th>
+              <th className="px-4 py-3 font-semibold">{labels.duration}</th>
+              <th className="px-4 py-3 font-semibold">{labels.group}</th>
+              <th className="px-4 py-3 font-semibold">{labels.priorityRoom}</th>
+              <th className="px-4 py-3 font-semibold">{labels.active}</th>
+              <th className="px-4 py-3 font-semibold">{labels.actions}</th>
             </tr>
           </thead>
 
@@ -183,7 +200,7 @@ export default function ServicesTable({ services }: Props) {
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
                       service.is_active ? "bg-app-accent" : "bg-app-soft"
                     }`}
-                    title={service.is_active ? "Aktivno" : "Neaktivno"}
+                    title={service.is_active ? labels.active : labels.inactive}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
@@ -194,12 +211,10 @@ export default function ServicesTable({ services }: Props) {
                 </td>
 
                 <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <SettingsDeleteButton
-                      label={service.name}
-                      onDelete={deleteServiceAction.bind(null, service.id)}
-                    />
-                  </div>
+                  <SettingsDeleteButton
+                    label={service.name}
+                    onDelete={deleteServiceAction.bind(null, service.id)}
+                  />
                 </td>
               </tr>
             ))}

@@ -21,79 +21,118 @@ type AppRole = "admin" | "employee";
 type Props = {
   role: AppRole;
   displayName: string;
+  salonName: string;
+  logoUrl: string | null;
+  t: {
+    dashboard: string;
+    appointments: string;
+    calendar: string;
+    timeGrid: string;
+    clients: string;
+    account: string;
+    schedule: string;
+    reports: string;
+    settings: string;
+    adminPanel: string;
+    mobileAdmin: string;
+    loggedInAs: string;
+  };
 };
 
-const allNavItems = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    roles: ["admin", "employee"],
-  },
-  {
-    href: "/dashboard/appointments",
-    label: "Termini",
-    icon: ListChecks,
-    roles: ["admin", "employee"],
-  },
-  {
-    href: "/dashboard/calendar",
-    label: "Kalendar",
-    icon: CalendarDays,
-    roles: ["admin", "employee"],
-  },
-  {
-    href: "/dashboard/calendar/time-grid",
-    label: "Time Grid",
-    icon: Clock3,
-    roles: ["admin", "employee"],
-  },
-  {
-    href: "/dashboard/clients",
-    label: "Klijenti",
-    icon: Users,
-    roles: ["admin", "employee"],
-  },
-  {
-    href: "/dashboard/account",
-    label: "Moj račun",
-    icon: UserCircle2,
-    roles: ["admin", "employee"],
-  },
-  {
-    href: "/dashboard/schedule",
-    label: "Rasporedi",
-    icon: Users,
-    roles: ["admin"],
-  },
-  {
-    href: "/dashboard/reports",
-    label: "Reports",
-    icon: LayoutDashboard,
-    roles: ["admin"],
-  },
-  {
-    href: "/dashboard/settings",
-    label: "Postavke",
-    icon: Settings,
-    roles: ["admin"],
-  },
-];
+function getNavItems(t: Props["t"]) {
+  return [
+    {
+      href: "/dashboard",
+      label: t.dashboard,
+      icon: LayoutDashboard,
+      roles: ["admin", "employee"],
+    },
+    {
+      href: "/dashboard/appointments",
+      label: t.appointments,
+      icon: ListChecks,
+      roles: ["admin", "employee"],
+    },
+    {
+      href: "/dashboard/calendar",
+      label: t.calendar,
+      icon: CalendarDays,
+      roles: ["admin", "employee"],
+    },
+    {
+      href: "/dashboard/calendar/time-grid",
+      label: t.timeGrid,
+      icon: Clock3,
+      roles: ["admin", "employee"],
+    },
+    {
+      href: "/dashboard/clients",
+      label: t.clients,
+      icon: Users,
+      roles: ["admin", "employee"],
+    },
+    {
+      href: "/dashboard/account",
+      label: t.account,
+      icon: UserCircle2,
+      roles: ["admin", "employee"],
+    },
+    {
+      href: "/dashboard/schedule",
+      label: t.schedule,
+      icon: Users,
+      roles: ["admin"],
+    },
+    {
+      href: "/dashboard/reports",
+      label: t.reports,
+      icon: LayoutDashboard,
+      roles: ["admin"],
+    },
+    {
+      href: "/dashboard/settings",
+      label: t.settings,
+      icon: Settings,
+      roles: ["admin"],
+    },
+  ] satisfies Array<{
+    href: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    roles: AppRole[];
+  }>;
+}
 
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname.startsWith(href);
 }
 
-export default function DashboardSidebar({ role, displayName }: Props) {
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+export default function DashboardSidebar({
+  role,
+  displayName,
+  salonName,
+  logoUrl,
+  t,
+}: Props) {
   const pathname = usePathname();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
 
   const navItems = useMemo(
-    () => allNavItems.filter((item) => item.roles.includes(role)),
-    [role],
+    () => getNavItems(t).filter((item) => item.roles.includes(role)),
+    [role, t],
   );
 
   useEffect(() => {
@@ -113,11 +152,25 @@ export default function DashboardSidebar({ role, displayName }: Props) {
     <>
       <div className="sticky top-0 z-50 border-b border-app-soft bg-app-card px-4 py-3 shadow-sm lg:hidden">
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-lg font-semibold text-app-text">
-              Body and Soul
+          <div className="flex items-center gap-3">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={salonName}
+                className="h-10 w-10 rounded-xl object-cover"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-app-accent text-sm font-bold text-white">
+                {getInitials(salonName)}
+              </div>
+            )}
+
+            <div>
+              <div className="text-lg font-semibold text-app-text">
+                {salonName}
+              </div>
+              <div className="text-xs text-app-muted">{t.mobileAdmin}</div>
             </div>
-            <div className="text-xs text-app-muted">Salon admin</div>
           </div>
 
           <button
@@ -183,16 +236,32 @@ export default function DashboardSidebar({ role, displayName }: Props) {
       >
         <div className="flex items-start justify-between gap-2 px-4 pb-6">
           {!desktopCollapsed ? (
-            <div>
-              <div className="text-xl font-bold text-app-text">
-                Body and Soul
-              </div>
-              <div className="mt-1 text-sm text-app-muted">
-                Salon admin panel
+            <div className="flex items-center gap-3">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={salonName}
+                  className="h-11 w-11 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-app-accent text-sm font-bold text-white">
+                  {getInitials(salonName)}
+                </div>
+              )}
+
+              <div>
+                <div className="text-xl font-bold text-app-text">
+                  {salonName}
+                </div>
+                <div className="mt-1 text-sm text-app-muted">
+                  {t.adminPanel}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="text-sm font-bold text-app-text">B&S</div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-app-accent text-xs font-bold text-white">
+              {getInitials(salonName)}
+            </div>
           )}
 
           <button
@@ -239,7 +308,7 @@ export default function DashboardSidebar({ role, displayName }: Props) {
             {!desktopCollapsed ? (
               <>
                 <div className="text-sm text-app-muted">
-                  Logiran kao:{" "}
+                  {t.loggedInAs}:{" "}
                   <span className="font-medium text-app-text">
                     {displayName}
                   </span>
@@ -250,7 +319,7 @@ export default function DashboardSidebar({ role, displayName }: Props) {
                     href="/dashboard/account"
                     className="rounded-xl border border-app-soft bg-white px-3 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg"
                   >
-                    Moj račun
+                    {t.account}
                   </Link>
                   <LogoutButton />
                 </div>

@@ -1,11 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   createRoomAction,
   type SettingsActionState,
 } from "@/features/settings/actions";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +13,13 @@ const initialState: SettingsActionState = {
   success: "",
 };
 
-export default function RoomCreateForm() {
+type Labels = {
+  namePlaceholder: string;
+  adding: string;
+  addRoom: string;
+};
+
+export default function RoomCreateForm({ labels }: { labels: Labels }) {
   const [state, formAction, pending] = useActionState(
     createRoomAction,
     initialState,
@@ -37,8 +42,8 @@ export default function RoomCreateForm() {
     <form action={formAction} className="space-y-4">
       <input
         name="name"
-        placeholder="Naziv sobe"
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
+        placeholder={labels.namePlaceholder}
+        className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none transition focus:border-app-accent focus:ring-2 focus:ring-app-accent/20"
         required
       />
 
@@ -46,9 +51,9 @@ export default function RoomCreateForm() {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-black px-5 py-3 font-medium text-white disabled:opacity-50"
+          className="rounded-xl bg-app-accent px-5 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Dodavanje..." : "Dodaj sobu"}
+          {pending ? labels.adding : labels.addRoom}
         </button>
       </div>
     </form>

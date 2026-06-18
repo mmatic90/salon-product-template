@@ -8,10 +8,16 @@ import ServiceCreateForm from "./service-create-form";
 import { requireAdminForSettings } from "@/lib/page-guards";
 import EmptyStateCard from "@/components/empty-state-card";
 
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
+
 export default async function SettingsServicesPage() {
   await requireAdminForSettings();
 
   const services = await getServices();
+
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
 
   return (
     <main className="min-h-screen p-4 md:p-6 lg:p-8">
@@ -50,7 +56,23 @@ export default async function SettingsServicesPage() {
                 description="Dodaj prvu uslugu kako bi se pojavila u popisu i mogla koristiti u terminima."
               />
             ) : (
-              <ServicesTable services={services} />
+              <ServicesTable
+                services={services}
+                labels={{
+                  editHint: t("servicesSettings.editHint"),
+                  saveChangesText: t("servicesSettings.saveChangesText"),
+                  reset: t("servicesSettings.reset"),
+                  saving: t("common.saving"),
+                  saveChanges: t("servicesSettings.saveChanges"),
+                  name: t("servicesSettings.table.name"),
+                  duration: t("servicesSettings.table.duration"),
+                  group: t("servicesSettings.table.group"),
+                  priorityRoom: t("servicesSettings.table.priorityRoom"),
+                  active: t("servicesSettings.table.active"),
+                  inactive: t("servicesSettings.inactive"),
+                  actions: t("servicesSettings.table.actions"),
+                }}
+              />
             )}
           </div>
         </div>

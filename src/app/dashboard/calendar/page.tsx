@@ -5,7 +5,13 @@ import {
   getCalendarDayDataByEmployees,
   getCalendarDayDataByRooms,
 } from "@/features/calendar/queries";
-import { formatTime, getTodayLocalDate } from "@/lib/utils";
+import {
+  formatDateLabel,
+  formatTime,
+  getLocaleFromLanguage,
+  getTodayLocalDate,
+  statusLabel,
+} from "@/lib/utils";
 import DateQueryPicker from "@/components/date-query-picker";
 import AppointmentMiniDetails from "@/components/appointment-mini-details";
 import { getWorkStatusClasses } from "@/features/schedule/status-helpers";
@@ -13,6 +19,8 @@ import AutoSubmitSelect from "@/components/auto-submit-select";
 import AppointmentStatusActions from "@/components/appointment-status-actions";
 import EmptyStateCard from "@/components/empty-state-card";
 import { formatAppointmentServicesLabel } from "@/features/appointments/format-appointment-services";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 type SearchParams = Promise<{
   date?: string;
@@ -20,17 +28,6 @@ type SearchParams = Promise<{
   employee?: string;
   room?: string;
 }>;
-
-function formatDateTitle(value: string) {
-  const date = new Date(`${value}T00:00:00`);
-
-  return new Intl.DateTimeFormat("hr-HR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
 
 function statusClasses(status: string) {
   switch (status) {
@@ -44,21 +41,6 @@ function statusClasses(status: string) {
       return "border-[#6a655f] bg-[#ded7cf]";
     default:
       return "border-app-soft bg-white";
-  }
-}
-
-function statusLabel(status: string) {
-  switch (status) {
-    case "scheduled":
-      return "Zakazan";
-    case "completed":
-      return "Odrađen";
-    case "cancelled":
-      return "Otkazan";
-    case "no_show":
-      return "Nije došao";
-    default:
-      return status;
   }
 }
 
@@ -87,7 +69,9 @@ function ViewChip({
 
 function CalendarCard({
   appointment,
+  language,
 }: {
+  language: string | null | undefined;
   appointment: {
     id: string;
     start_time: string;
@@ -110,6 +94,12 @@ function CalendarCard({
     metaLabel?: string;
   };
 }) {
+  const serviceName = formatAppointmentServicesLabel(
+    appointment.appointment_services
+      ?.slice()
+      .sort((a, b) => a.sort_order - b.sort_order),
+  );
+
   return (
     <Link
       href={`/dashboard/appointments/${appointment.id}/edit`}
@@ -129,7 +119,7 @@ function CalendarCard({
         </div>
 
         <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-app-text">
-          {statusLabel(appointment.status)}
+          {statusLabel(appointment.status, language)}
         </span>
       </div>
 
@@ -138,13 +128,7 @@ function CalendarCard({
           {appointment.client_name}
         </div>
 
-        <div className="mt-1 text-sm text-app-text">
-          {formatAppointmentServicesLabel(
-            appointment.appointment_services
-              ?.slice()
-              .sort((a, b) => a.sort_order - b.sort_order),
-          )}
-        </div>
+        <div className="mt-1 text-sm text-app-text">{serviceName}</div>
 
         {appointment.service?.service_group ? (
           <div className="mt-1 text-xs text-app-muted">
@@ -175,11 +159,7 @@ function CalendarCard({
 
       <AppointmentMiniDetails
         clientName={appointment.client_name}
-        serviceName={formatAppointmentServicesLabel(
-          appointment.appointment_services
-            ?.slice()
-            .sort((a, b) => a.sort_order - b.sort_order),
-        )}
+        serviceName={serviceName}
         startTime={formatTime(appointment.start_time)}
         endTime={formatTime(appointment.end_time)}
         durationMinutes={appointment.duration_minutes}
@@ -204,6 +184,10 @@ export default async function CalendarPage({
   if (userError || !user) {
     redirect("/login");
   }
+
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
+  const locale = getLocaleFromLanguage(salonSettings?.language);
 
   const resolvedSearchParams = await searchParams;
   const selectedDate = resolvedSearchParams.date || getTodayLocalDate();
@@ -246,10 +230,11 @@ export default async function CalendarPage({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-app-text md:text-3xl">
-                Dnevni kalendar
+                {t("calendar.title")}
               </h1>
               <p className="mt-2 text-sm text-app-muted md:text-base">
-                Pregled termina za {formatDateTitle(selectedDate)}
+                {t("calendar.description")}{" "}
+                {formatDateLabel(selectedDate, locale)}
               </p>
             </div>
 
@@ -264,7 +249,7 @@ export default async function CalendarPage({
                 href={`/dashboard/appointments/new?date=${selectedDate}`}
                 className="inline-flex h-[42px] items-center justify-center rounded-xl bg-app-accent px-4 py-2 font-medium text-white transition hover:opacity-90"
               >
-                Novi termin
+                {t("calendar.newAppointment")}
               </Link>
             </div>
           </div>
@@ -274,21 +259,21 @@ export default async function CalendarPage({
               href={`/dashboard/calendar?date=${selectedDate}&view=employees`}
               active={selectedView === "employees"}
             >
-              Prikaz po zaposlenicima
+              {t("calendar.viewByEmployees")}
             </ViewChip>
 
             <ViewChip
               href={`/dashboard/calendar?date=${selectedDate}&view=rooms`}
               active={selectedView === "rooms"}
             >
-              Prikaz po sobama
+              {t("calendar.viewByRooms")}
             </ViewChip>
           </div>
 
           {selectedView === "employees" ? (
             <div className="mt-4 lg:hidden">
               <AutoSubmitSelect
-                label="Zaposlenik"
+                label={t("calendar.employee")}
                 action="/dashboard/calendar"
                 name="employee"
                 value={
@@ -307,7 +292,7 @@ export default async function CalendarPage({
           ) : (
             <div className="mt-4 lg:hidden">
               <AutoSubmitSelect
-                label="Soba"
+                label={t("calendar.room")}
                 action="/dashboard/calendar"
                 name="room"
                 value={selectedRoomId || roomGroups[0]?.roomId || ""}
@@ -337,25 +322,26 @@ export default async function CalendarPage({
                       {group.roomName}
                     </h2>
                     <span className="rounded-full bg-app-bg px-3 py-1 text-xs font-medium text-app-text">
-                      {group.appointments.length} termina
+                      {group.appointments.length} {t("calendar.appointments")}
                     </span>
                   </div>
 
                   {group.appointments.length === 0 ? (
                     <EmptyStateCard
-                      title="Nema termina u ovoj sobi"
-                      description="Za odabrani datum nema rezervacija u ovoj sobi."
+                      title={t("calendar.noRoomAppointmentsTitle")}
+                      description={t("calendar.noRoomAppointmentsDescription")}
                     />
                   ) : (
                     <div className="space-y-3">
                       {group.appointments.map((appointment) => (
                         <CalendarCard
                           key={appointment.id}
+                          language={salonSettings?.language}
                           appointment={{
                             ...appointment,
                             metaLabel: appointment.employee
-                              ? `Zaposlenik: ${appointment.employee.display_name}`
-                              : "Nepoznati zaposlenik",
+                              ? `${t("calendar.employee")}: ${appointment.employee.display_name}`
+                              : t("calendar.unknownEmployee"),
                           }}
                         />
                       ))}
@@ -376,24 +362,25 @@ export default async function CalendarPage({
                       {group.roomName}
                     </h2>
                     <span className="rounded-full bg-app-bg px-3 py-1 text-xs font-medium text-app-text">
-                      {group.appointments.length} termina
+                      {group.appointments.length} {t("calendar.appointments")}
                     </span>
                   </div>
 
                   {group.appointments.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-app-soft bg-app-card-alt p-4 text-sm text-app-muted">
-                      Nema termina u ovoj sobi.
+                      {t("calendar.noRoomAppointmentsShort")}
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {group.appointments.map((appointment) => (
                         <CalendarCard
                           key={appointment.id}
+                          language={salonSettings?.language}
                           appointment={{
                             ...appointment,
                             metaLabel: appointment.employee
-                              ? `Zaposlenik: ${appointment.employee.display_name}`
-                              : "Nepoznati zaposlenik",
+                              ? `${t("calendar.employee")}: ${appointment.employee.display_name}`
+                              : t("calendar.unknownEmployee"),
                           }}
                         />
                       ))}
@@ -432,25 +419,28 @@ export default async function CalendarPage({
                     </div>
 
                     <span className="rounded-full bg-app-bg px-3 py-1 text-xs font-medium text-app-text">
-                      {group.appointments.length} termina
+                      {group.appointments.length} {t("calendar.appointments")}
                     </span>
                   </div>
 
                   {group.appointments.length === 0 ? (
                     <EmptyStateCard
-                      title="Nema termina za ovog zaposlenika"
-                      description="Za odabrani datum ovaj zaposlenik nema rezerviranih termina."
+                      title={t("calendar.noEmployeeAppointmentsTitle")}
+                      description={t(
+                        "calendar.noEmployeeAppointmentsDescription",
+                      )}
                     />
                   ) : (
                     <div className="space-y-3">
                       {group.appointments.map((appointment) => (
                         <CalendarCard
                           key={appointment.id}
+                          language={salonSettings?.language}
                           appointment={{
                             ...appointment,
                             metaLabel: appointment.room
-                              ? `Soba: ${appointment.room.name}`
-                              : "Nepoznata soba",
+                              ? `${t("calendar.room")}: ${appointment.room.name}`
+                              : t("calendar.unknownRoom"),
                           }}
                         />
                       ))}
@@ -487,24 +477,25 @@ export default async function CalendarPage({
                     </div>
 
                     <span className="rounded-full bg-app-bg px-3 py-1 text-xs font-medium text-app-text">
-                      {group.appointments.length} termina
+                      {group.appointments.length} {t("calendar.appointments")}
                     </span>
                   </div>
 
                   {group.appointments.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-app-soft bg-app-card-alt p-4 text-sm text-app-muted">
-                      Nema termina za ovog zaposlenika.
+                      {t("calendar.noEmployeeAppointmentsShort")}
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {group.appointments.map((appointment) => (
                         <CalendarCard
                           key={appointment.id}
+                          language={salonSettings?.language}
                           appointment={{
                             ...appointment,
                             metaLabel: appointment.room
-                              ? `Soba: ${appointment.room.name}`
-                              : "Nepoznata soba",
+                              ? `${t("calendar.room")}: ${appointment.room.name}`
+                              : t("calendar.unknownRoom"),
                           }}
                         />
                       ))}

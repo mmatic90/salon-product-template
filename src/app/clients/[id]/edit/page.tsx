@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import ClientForm from "@/components/client-form";
 import { getClientById } from "@/features/clients/queries";
 import { updateClientAction } from "@/features/clients/actions";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 type Params = Promise<{
   id: string;
@@ -20,6 +22,9 @@ export default async function EditClientPage({ params }: { params: Params }) {
     redirect("/login");
   }
 
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
+
   const { id } = await params;
   const client = await getClientById(id);
 
@@ -33,12 +38,20 @@ export default async function EditClientPage({ params }: { params: Params }) {
     <main className="min-h-screen bg-app-bg p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-3xl">
         <ClientForm
-          title="Uredi klijenta"
-          description="Ažuriraj podatke o klijentu."
+          title={t("clientForm.editTitle")}
+          description={t("clientForm.editDescription")}
           action={boundAction}
-          submitLabel="Spremi izmjene"
+          submitLabel={t("clientForm.saveChanges")}
           backHref={`/dashboard/clients/${client.id}`}
-          backLabel="Natrag"
+          backLabel={t("common.back")}
+          labels={{
+            fullName: t("clientForm.fullName"),
+            phone: t("clientForm.phone"),
+            email: t("clientForm.email"),
+            note: t("clientForm.note"),
+            internalNote: t("clientForm.internalNote"),
+            saving: t("common.saving"),
+          }}
           initialValues={{
             full_name: client.full_name,
             phone: client.phone ?? "",

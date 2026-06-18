@@ -2,40 +2,31 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClientById } from "@/features/clients/queries";
-import { formatTime } from "@/lib/utils";
+import { formatTime, statusLabel } from "@/lib/utils";
 import EmptyStateCard from "@/components/empty-state-card";
 import { formatAppointmentServicesLabel } from "@/features/appointments/format-appointment-services";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 type Params = Promise<{
   id: string;
 }>;
 
-function formatDate(value: string | null) {
+function getLocale(language: string | null | undefined) {
+  if (language === "en") return "en-US";
+  if (language === "it") return "it-IT";
+  return "hr-HR";
+}
+
+function formatDate(value: string | null, locale: string) {
   if (!value) return "-";
 
   const date = new Date(`${value}T00:00:00`);
-  return new Intl.DateTimeFormat("hr-HR", {
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   }).format(date);
-}
-
-function segmentLabel(segment: string) {
-  switch (segment) {
-    case "new":
-      return "Novi klijent";
-    case "active":
-      return "Aktivan";
-    case "regular":
-      return "Redovan";
-    case "at_risk":
-      return "Rizičan";
-    case "lost":
-      return "Izgubljen";
-    default:
-      return segment;
-  }
 }
 
 function segmentClasses(segment: string) {
@@ -86,12 +77,27 @@ export default async function ClientDetailsPage({
     redirect("/login");
   }
 
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
+  const locale = getLocale(salonSettings?.language);
+
   const { id } = await params;
   const client = await getClientById(id);
 
   if (!client) {
     notFound();
   }
+
+  const segmentLabels: Record<string, string> = {
+    new: t("clientDetails.segment.new"),
+    active: t("clientDetails.segment.active"),
+    regular: t("clientDetails.segment.regular"),
+    at_risk: t("clientDetails.segment.atRisk"),
+    lost: t("clientDetails.segment.lost"),
+  };
+
+  const segmentLabel =
+    segmentLabels[client.insights.segment] ?? client.insights.segment;
 
   return (
     <main className="min-h-screen bg-app-bg p-4 md:p-6 lg:p-8">
@@ -108,12 +114,12 @@ export default async function ClientDetailsPage({
                     client.insights.segment,
                   )}`}
                 >
-                  {segmentLabel(client.insights.segment)}
+                  {segmentLabel}
                 </span>
               </div>
 
               <p className="mt-2 text-app-muted">
-                Pregled podataka, inteligencije klijenta i povijesti termina.
+                {t("clientDetails.description")}
               </p>
             </div>
 
@@ -122,62 +128,74 @@ export default async function ClientDetailsPage({
                 href={`/dashboard/clients/${client.id}/edit`}
                 className="rounded-xl border border-app-soft bg-white px-4 py-2 font-medium text-app-text transition hover:bg-app-bg"
               >
-                Uredi
+                {t("common.edit")}
               </Link>
               <Link
                 href="/dashboard/clients"
                 className="rounded-xl border border-app-soft bg-white px-4 py-2 font-medium text-app-text transition hover:bg-app-bg"
               >
-                Natrag
+                {t("common.back")}
               </Link>
             </div>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <InsightCard label="Telefon" value={client.phone || "-"} />
-          <InsightCard label="Email" value={client.email || "-"} />
-          <InsightCard label="Broj termina" value={client.appointments_count} />
           <InsightCard
-            label="Sljedeći termin"
-            value={formatDate(client.next_appointment)}
+            label={t("clientDetails.phone")}
+            value={client.phone || "-"}
+          />
+          <InsightCard
+            label={t("clientDetails.email")}
+            value={client.email || "-"}
+          />
+          <InsightCard
+            label={t("clientDetails.appointmentsCount")}
+            value={client.appointments_count}
+          />
+          <InsightCard
+            label={t("clientDetails.nextAppointment")}
+            value={formatDate(client.next_appointment, locale)}
           />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InsightCard
-            label="Odrađeni termini"
+            label={t("clientDetails.completedAppointments")}
             value={client.insights.completed_appointments}
           />
           <InsightCard
-            label="Otkazani termini"
+            label={t("clientDetails.cancelledAppointments")}
             value={client.insights.cancelled_appointments}
           />
           <InsightCard
-            label="No-show termini"
+            label={t("clientDetails.noShowAppointments")}
             value={client.insights.no_show_appointments}
           />
           <InsightCard
-            label="Zadnji dolazak"
-            value={formatDate(client.insights.last_completed_appointment)}
+            label={t("clientDetails.lastVisit")}
+            value={formatDate(
+              client.insights.last_completed_appointment,
+              locale,
+            )}
           />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <InsightCard
-            label="No-show rate"
+            label={t("clientDetails.noShowRate")}
             value={`${client.insights.no_show_rate}%`}
           />
           <InsightCard
-            label="Cancellation rate"
+            label={t("clientDetails.cancellationRate")}
             value={`${client.insights.cancellation_rate}%`}
           />
           <InsightCard
-            label="Najčešća usluga"
+            label={t("clientDetails.favoriteService")}
             value={client.insights.favorite_service || "-"}
           />
           <InsightCard
-            label="Omiljeni zaposlenik"
+            label={t("clientDetails.favoriteEmployee")}
             value={client.insights.favorite_employee || "-"}
           />
         </div>
@@ -185,30 +203,32 @@ export default async function ClientDetailsPage({
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-app-text">
-              Inteligencija klijenta
+              {t("clientDetails.intelligence")}
             </h2>
 
             <div className="mt-4 space-y-3">
               <div className="rounded-xl border border-app-soft bg-white px-4 py-3 text-sm text-app-text">
-                Prosječan razmak između dolazaka:{" "}
+                {t("clientDetails.averageDaysBetweenVisits")}:{" "}
                 <span className="font-semibold">
                   {client.insights.average_days_between_visits !== null
-                    ? `${client.insights.average_days_between_visits} dana`
+                    ? `${client.insights.average_days_between_visits} ${t(
+                        "clientDetails.days",
+                      )}`
                     : "-"}
                 </span>
               </div>
 
               <div className="rounded-xl border border-app-soft bg-white px-4 py-3 text-sm text-app-text">
-                Segment klijenta:{" "}
-                <span className="font-semibold">
-                  {segmentLabel(client.insights.segment)}
-                </span>
+                {t("clientDetails.clientSegment")}:{" "}
+                <span className="font-semibold">{segmentLabel}</span>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-app-text">Upozorenja</h2>
+            <h2 className="text-xl font-semibold text-app-text">
+              {t("clientDetails.alerts")}
+            </h2>
 
             <div className="mt-4 space-y-3">
               {client.insights.alerts.length > 0 ? (
@@ -222,8 +242,8 @@ export default async function ClientDetailsPage({
                 ))
               ) : (
                 <EmptyStateCard
-                  title="Nema upozorenja"
-                  description="Za ovog klijenta trenutno nema posebnih upozorenja."
+                  title={t("clientDetails.noAlertsTitle")}
+                  description={t("clientDetails.noAlertsDescription")}
                 />
               )}
             </div>
@@ -233,7 +253,7 @@ export default async function ClientDetailsPage({
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-app-text">
-              Budući termini
+              {t("clientDetails.upcomingAppointments")}
             </h2>
 
             <div className="mt-4 space-y-3">
@@ -244,7 +264,7 @@ export default async function ClientDetailsPage({
                     className="rounded-xl border border-app-soft bg-white px-4 py-3"
                   >
                     <div className="font-medium text-app-text">
-                      {formatDate(appointment.appointment_date)} ·{" "}
+                      {formatDate(appointment.appointment_date, locale)} ·{" "}
                       {formatTime(appointment.start_time)} -{" "}
                       {formatTime(appointment.end_time)}
                     </div>
@@ -261,15 +281,17 @@ export default async function ClientDetailsPage({
                 ))
               ) : (
                 <EmptyStateCard
-                  title="Nema budućih termina"
-                  description="Za ovog klijenta trenutno nema nadolazećih rezervacija."
+                  title={t("clientDetails.noUpcomingTitle")}
+                  description={t("clientDetails.noUpcomingDescription")}
                 />
               )}
             </div>
           </div>
 
           <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-app-text">Bilješke</h2>
+            <h2 className="text-xl font-semibold text-app-text">
+              {t("clientDetails.notes")}
+            </h2>
 
             <div className="mt-4 space-y-3">
               {client.note ? (
@@ -278,8 +300,8 @@ export default async function ClientDetailsPage({
                 </div>
               ) : (
                 <EmptyStateCard
-                  title="Nema bilješke"
-                  description="Za ovog klijenta još nije spremljena korisnička bilješka."
+                  title={t("clientDetails.noNoteTitle")}
+                  description={t("clientDetails.noNoteDescription")}
                 />
               )}
 
@@ -294,19 +316,31 @@ export default async function ClientDetailsPage({
 
         <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-app-text">
-            Povijest termina
+            {t("clientDetails.appointmentHistory")}
           </h2>
 
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead className="bg-app-table-head">
                 <tr className="text-left text-sm text-app-muted">
-                  <th className="px-4 py-3 font-semibold">Datum</th>
-                  <th className="px-4 py-3 font-semibold">Vrijeme</th>
-                  <th className="px-4 py-3 font-semibold">Usluga</th>
-                  <th className="px-4 py-3 font-semibold">Zaposlenik</th>
-                  <th className="px-4 py-3 font-semibold">Soba</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">
+                    {t("clientDetails.table.date")}
+                  </th>
+                  <th className="px-4 py-3 font-semibold">
+                    {t("clientDetails.table.time")}
+                  </th>
+                  <th className="px-4 py-3 font-semibold">
+                    {t("clientDetails.table.service")}
+                  </th>
+                  <th className="px-4 py-3 font-semibold">
+                    {t("clientDetails.table.employee")}
+                  </th>
+                  <th className="px-4 py-3 font-semibold">
+                    {t("clientDetails.table.room")}
+                  </th>
+                  <th className="px-4 py-3 font-semibold">
+                    {t("clientDetails.table.status")}
+                  </th>
                 </tr>
               </thead>
 
@@ -317,7 +351,7 @@ export default async function ClientDetailsPage({
                     className="border-t border-app-soft text-sm transition hover:bg-app-card-alt"
                   >
                     <td className="px-4 py-4 text-app-text">
-                      {formatDate(appointment.appointment_date)}
+                      {formatDate(appointment.appointment_date, locale)}
                     </td>
                     <td className="px-4 py-4 text-app-text">
                       {formatTime(appointment.start_time)} -{" "}
@@ -337,7 +371,7 @@ export default async function ClientDetailsPage({
                       {appointment.room?.name || "-"}
                     </td>
                     <td className="px-4 py-4 text-app-muted">
-                      {appointment.status}
+                      {statusLabel(appointment.status, salonSettings?.language)}
                     </td>
                   </tr>
                 ))}
@@ -348,8 +382,8 @@ export default async function ClientDetailsPage({
           {client.pastAppointments.length === 0 ? (
             <div className="mt-4">
               <EmptyStateCard
-                title="Nema povijesti termina"
-                description="Ovaj klijent još nema završenih ili prošlih termina u evidenciji."
+                title={t("clientDetails.noHistoryTitle")}
+                description={t("clientDetails.noHistoryDescription")}
               />
             </div>
           ) : null}

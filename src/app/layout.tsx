@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Body & Soul",
+  title: {
+    default: "Salon Admin",
+    template: "%s | Salon Admin",
+  },
   description: "Salon booking and management app",
 };
 

@@ -12,6 +12,13 @@ type Props = {
   initialDisplayName: string;
   initialColorHex: string | null;
   canEditColor: boolean;
+  labels: {
+    displayName: string;
+    employeeColor: string;
+    colorUnavailable: string;
+    saving: string;
+    saveChanges: string;
+  };
 };
 
 const initialState: AccountActionState = {
@@ -23,6 +30,7 @@ export default function AccountProfileForm({
   initialDisplayName,
   initialColorHex,
   canEditColor,
+  labels,
 }: Props) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(
@@ -45,19 +53,19 @@ export default function AccountProfileForm({
     <form action={formAction} className="grid gap-4 md:grid-cols-2">
       <div className="md:col-span-2">
         <label className="mb-1 block text-sm font-medium text-app-text">
-          Prikazano ime
+          {labels.displayName}
         </label>
         <input
           name="display_name"
           defaultValue={initialDisplayName}
-          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none"
+          className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none transition focus:border-app-accent"
           required
         />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-app-text">
-          Boja zaposlenika
+          {labels.employeeColor}
         </label>
         <input
           name="color_hex"
@@ -71,18 +79,18 @@ export default function AccountProfileForm({
       <div className="flex items-end">
         {!canEditColor ? (
           <div className="text-sm text-app-muted">
-            Ovaj račun nema zaposlenički profil pa boja nije dostupna.
+            {labels.colorUnavailable}
           </div>
         ) : null}
       </div>
 
-      <div className="md:col-span-2 flex justify-end">
+      <div className="flex justify-end md:col-span-2">
         <button
           type="submit"
           disabled={pending}
           className="rounded-xl bg-app-accent px-5 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Spremanje..." : "Spremi izmjene"}
+          {pending ? labels.saving : labels.saveChanges}
         </button>
       </div>
     </form>

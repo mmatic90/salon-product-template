@@ -12,6 +12,17 @@ import { toast } from "sonner";
 
 type Props = {
   rooms: RoomItem[];
+  labels: {
+    editHint: string;
+    saveChangesText: string;
+    reset: string;
+    saving: string;
+    saveChanges: string;
+    name: string;
+    active: string;
+    inactive: string;
+    actions: string;
+  };
 };
 
 type EditableRoom = {
@@ -28,7 +39,7 @@ function toEditable(room: RoomItem): EditableRoom {
   };
 }
 
-export default function RoomsTable({ rooms }: Props) {
+export default function RoomsTable({ rooms, labels }: Props) {
   const initialItems = useMemo(() => rooms.map(toEditable), [rooms]);
 
   const [items, setItems] = useState<EditableRoom[]>(initialItems);
@@ -53,6 +64,7 @@ export default function RoomsTable({ rooms }: Props) {
   function saveChanges() {
     startTransition(async () => {
       const result = await bulkUpdateRoomsAction(items);
+
       if (result.ok) {
         toast.success(result.message);
       } else {
@@ -65,8 +77,11 @@ export default function RoomsTable({ rooms }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-app-muted">
-          Uredi sobe pa klikni{" "}
-          <span className="font-medium text-app-text">Spremi izmjene</span>.
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -77,7 +92,7 @@ export default function RoomsTable({ rooms }: Props) {
             className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
@@ -86,22 +101,22 @@ export default function RoomsTable({ rooms }: Props) {
             disabled={pending || !hasChanges}
             className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-2xl border border-app-soft">
         <table className="min-w-full border-collapse">
           <thead className="bg-app-table-head">
             <tr className="text-left text-sm text-app-muted">
-              <th className="px-4 py-3 font-semibold">Naziv</th>
-              <th className="px-4 py-3 font-semibold">Aktivno</th>
-              <th className="px-4 py-3 font-semibold">Akcije</th>
+              <th className="px-4 py-3 font-semibold">{labels.name}</th>
+              <th className="px-4 py-3 font-semibold">{labels.active}</th>
+              <th className="px-4 py-3 font-semibold">{labels.actions}</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="bg-app-card">
             {items.map((room) => (
               <tr
                 key={room.id}
@@ -113,7 +128,7 @@ export default function RoomsTable({ rooms }: Props) {
                     onChange={(e) =>
                       updateItem(room.id, "name", e.target.value)
                     }
-                    className="w-full min-w-[240px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none"
+                    className="w-full min-w-[240px] rounded-lg border border-app-soft bg-white px-3 py-2 text-app-text outline-none transition focus:border-app-accent"
                   />
                 </td>
 
@@ -122,6 +137,7 @@ export default function RoomsTable({ rooms }: Props) {
                     type="button"
                     role="switch"
                     aria-checked={room.is_active}
+                    title={room.is_active ? labels.active : labels.inactive}
                     onClick={() =>
                       updateItem(room.id, "is_active", !room.is_active)
                     }
@@ -138,12 +154,10 @@ export default function RoomsTable({ rooms }: Props) {
                 </td>
 
                 <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <SettingsDeleteButton
-                      label={room.name}
-                      onDelete={deleteRoomAction.bind(null, room.id)}
-                    />
-                  </div>
+                  <SettingsDeleteButton
+                    label={room.name}
+                    onDelete={deleteRoomAction.bind(null, room.id)}
+                  />
                 </td>
               </tr>
             ))}

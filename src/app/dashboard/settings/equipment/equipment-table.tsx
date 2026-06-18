@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Pencil, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import type { EquipmentItem } from "@/features/settings/types";
 import {
   bulkUpdateEquipmentAction,
@@ -12,6 +12,18 @@ import { toast } from "sonner";
 
 type Props = {
   equipment: EquipmentItem[];
+  labels: {
+    editHint: string;
+    saveChangesText: string;
+    reset: string;
+    saving: string;
+    saveChanges: string;
+    name: string;
+    quantity: string;
+    active: string;
+    inactive: string;
+    actions: string;
+  };
 };
 
 type EditableEquipment = {
@@ -30,7 +42,7 @@ function toEditable(item: EquipmentItem): EditableEquipment {
   };
 }
 
-export default function EquipmentTable({ equipment }: Props) {
+export default function EquipmentTable({ equipment, labels }: Props) {
   const initialItems = useMemo(() => equipment.map(toEditable), [equipment]);
 
   const [items, setItems] = useState<EditableEquipment[]>(initialItems);
@@ -55,6 +67,7 @@ export default function EquipmentTable({ equipment }: Props) {
   function saveChanges() {
     startTransition(async () => {
       const result = await bulkUpdateEquipmentAction(items);
+
       if (result.ok) {
         toast.success(result.message);
       } else {
@@ -67,8 +80,11 @@ export default function EquipmentTable({ equipment }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-app-muted">
-          Uredi opremu pa klikni{" "}
-          <span className="font-medium text-app-text">Spremi izmjene</span>.
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -79,7 +95,7 @@ export default function EquipmentTable({ equipment }: Props) {
             className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
@@ -88,7 +104,7 @@ export default function EquipmentTable({ equipment }: Props) {
             disabled={pending || !hasChanges}
             className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
@@ -97,10 +113,10 @@ export default function EquipmentTable({ equipment }: Props) {
         <table className="min-w-full border-collapse">
           <thead className="bg-app-table-head">
             <tr className="text-left text-sm text-app-muted">
-              <th className="px-4 py-3 font-semibold">Naziv</th>
-              <th className="px-4 py-3 font-semibold">Količina</th>
-              <th className="px-4 py-3 font-semibold">Aktivno</th>
-              <th className="px-4 py-3 font-semibold">Akcije</th>
+              <th className="px-4 py-3 font-semibold">{labels.name}</th>
+              <th className="px-4 py-3 font-semibold">{labels.quantity}</th>
+              <th className="px-4 py-3 font-semibold">{labels.active}</th>
+              <th className="px-4 py-3 font-semibold">{labels.actions}</th>
             </tr>
           </thead>
 
@@ -137,6 +153,7 @@ export default function EquipmentTable({ equipment }: Props) {
                     type="button"
                     role="switch"
                     aria-checked={item.is_active}
+                    title={item.is_active ? labels.active : labels.inactive}
                     onClick={() =>
                       updateItem(item.id, "is_active", !item.is_active)
                     }
@@ -153,16 +170,10 @@ export default function EquipmentTable({ equipment }: Props) {
                 </td>
 
                 <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-lg border border-app-soft bg-white p-2 text-app-muted">
-                      <Pencil className="h-4 w-4" />
-                    </span>
-
-                    <SettingsDeleteButton
-                      label={item.name}
-                      onDelete={deleteEquipmentAction.bind(null, item.id)}
-                    />
-                  </div>
+                  <SettingsDeleteButton
+                    label={item.name}
+                    onDelete={deleteEquipmentAction.bind(null, item.id)}
+                  />
                 </td>
               </tr>
             ))}

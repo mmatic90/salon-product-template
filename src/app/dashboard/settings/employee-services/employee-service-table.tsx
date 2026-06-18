@@ -22,6 +22,18 @@ type Props = {
   employees: EmployeeItem[];
   services: ServiceItem[];
   mappings: EmployeeServiceMappingRow[];
+  labels: {
+    editHint: string;
+    saveChangesText: string;
+    reset: string;
+    saving: string;
+    saveChanges: string;
+    employee: string;
+    all: string;
+    none: string;
+    allServices: string;
+    removeAll: string;
+  };
 };
 
 type EditableMapping = {
@@ -33,6 +45,7 @@ export default function EmployeeServiceTable({
   employees,
   services,
   mappings,
+  labels,
 }: Props) {
   const activeEmployees = useMemo(
     () => employees.filter((employee) => employee.is_active),
@@ -123,8 +136,11 @@ export default function EmployeeServiceTable({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-app-muted">
-          Označi usluge koje zaposlenik može raditi pa klikni{" "}
-          <span className="font-medium text-app-text">Spremi izmjene</span>.
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -135,7 +151,7 @@ export default function EmployeeServiceTable({
             className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
@@ -144,16 +160,16 @@ export default function EmployeeServiceTable({
             disabled={pending || !hasChanges}
             className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
 
-      <div className="hidden overflow-x-auto lg:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-app-soft lg:block">
         <table className="min-w-full border-collapse overflow-hidden rounded-2xl">
           <thead className="bg-app-table-head">
             <tr className="text-left text-sm text-app-muted">
-              <th className="px-4 py-3 font-semibold">Zaposlenik</th>
+              <th className="px-4 py-3 font-semibold">{labels.employee}</th>
               {activeServices.map((service) => (
                 <th
                   key={service.id}
@@ -165,7 +181,7 @@ export default function EmployeeServiceTable({
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="bg-app-card">
             {activeEmployees.map((employee) => {
               const item = items.find((row) => row.employee_id === employee.id);
 
@@ -184,7 +200,7 @@ export default function EmployeeServiceTable({
                           onClick={() => selectAllServices(employee.id)}
                           className="rounded-lg border border-app-soft bg-white px-2 py-1 text-app-text transition hover:bg-app-bg"
                         >
-                          Sve
+                          {labels.all}
                         </button>
 
                         <button
@@ -192,7 +208,7 @@ export default function EmployeeServiceTable({
                           onClick={() => clearAllServices(employee.id)}
                           className="rounded-lg border border-app-soft bg-white px-2 py-1 text-app-text transition hover:bg-app-bg"
                         >
-                          Ništa
+                          {labels.none}
                         </button>
                       </div>
                     </div>
@@ -242,7 +258,7 @@ export default function EmployeeServiceTable({
                     onClick={() => selectAllServices(employee.id)}
                     className="rounded-lg border border-app-soft bg-white px-2 py-1 text-app-text transition hover:bg-app-bg"
                   >
-                    Sve usluge
+                    {labels.allServices}
                   </button>
 
                   <button
@@ -250,7 +266,7 @@ export default function EmployeeServiceTable({
                     onClick={() => clearAllServices(employee.id)}
                     className="rounded-lg border border-app-soft bg-white px-2 py-1 text-app-text transition hover:bg-app-bg"
                   >
-                    Ukloni sve
+                    {labels.removeAll}
                   </button>
                 </div>
               </div>

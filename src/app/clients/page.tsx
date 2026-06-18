@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClientsList } from "@/features/clients/queries";
 import { deleteClientAction } from "@/features/clients/actions";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 import EmptyStateCard from "@/components/empty-state-card";
 import PageShell from "@/components/page-shell";
 import PageHeader from "@/components/page-header";
@@ -13,11 +15,11 @@ type SearchParams = Promise<{
   q?: string;
 }>;
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return "-";
 
   const date = new Date(`${value}T00:00:00`);
-  return new Intl.DateTimeFormat("hr-HR", {
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -40,6 +42,15 @@ export default async function ClientsPage({
     redirect("/login");
   }
 
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
+  const locale =
+    salonSettings?.language === "en"
+      ? "en-US"
+      : salonSettings?.language === "it"
+        ? "it-IT"
+        : "hr-HR";
+
   const resolvedSearchParams = await searchParams;
   const query = resolvedSearchParams.q || "";
 
@@ -48,14 +59,14 @@ export default async function ClientsPage({
   return (
     <PageShell maxWidth="max-w-7xl">
       <PageHeader
-        title="Klijenti"
-        description="Pregled klijenata i njihove povijesti termina."
+        title={t("clients.title")}
+        description={t("clients.description")}
         actions={
           <Link
             href="/dashboard/clients/new"
             className="inline-flex rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
           >
-            Novi klijent
+            {t("clients.newClient")}
           </Link>
         }
       />
@@ -66,7 +77,7 @@ export default async function ClientsPage({
             type="text"
             name="q"
             defaultValue={query}
-            placeholder="Pretraži po imenu, telefonu ili emailu..."
+            placeholder={t("clients.searchPlaceholder")}
             className="w-full rounded-xl border border-app-soft bg-white px-4 py-3 text-app-text outline-none placeholder:text-app-muted"
           />
         </form>
@@ -77,13 +88,27 @@ export default async function ClientsPage({
           <table className="min-w-full border-collapse">
             <thead className="bg-app-table-head">
               <tr className="text-left text-sm text-app-muted">
-                <th className="px-4 py-3 font-semibold">Klijent</th>
-                <th className="px-4 py-3 font-semibold">Telefon</th>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Broj termina</th>
-                <th className="px-4 py-3 font-semibold">Zadnji termin</th>
-                <th className="px-4 py-3 font-semibold">Sljedeći termin</th>
-                <th className="px-4 py-3 font-semibold">Akcije</th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.client")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.phone")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.email")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.appointmentsCount")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.lastAppointment")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.nextAppointment")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t("clients.table.actions")}
+                </th>
               </tr>
             </thead>
 
@@ -106,10 +131,10 @@ export default async function ClientsPage({
                     {client.appointments_count}
                   </td>
                   <td className="px-4 py-4 text-app-muted">
-                    {formatDate(client.last_appointment)}
+                    {formatDate(client.last_appointment, locale)}
                   </td>
                   <td className="px-4 py-4 text-app-muted">
-                    {formatDate(client.next_appointment)}
+                    {formatDate(client.next_appointment, locale)}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-2">
@@ -117,14 +142,14 @@ export default async function ClientsPage({
                         href={`/dashboard/clients/${client.id}`}
                         className="rounded-xl border border-app-soft bg-white px-3 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg"
                       >
-                        Otvori
+                        {t("common.open")}
                       </Link>
 
                       <Link
                         href={`/dashboard/clients/${client.id}/edit`}
                         className="rounded-xl border border-app-soft bg-white px-3 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg"
                       >
-                        Uredi
+                        {t("common.edit")}
                       </Link>
 
                       <SettingsDeleteButton
@@ -142,8 +167,8 @@ export default async function ClientsPage({
         {clients.length === 0 ? (
           <div className="mt-4">
             <EmptyStateCard
-              title="Nema pronađenih klijenata"
-              description="Pokušaj s drugim pojmom pretrage ili dodaj novog klijenta."
+              title={t("clients.emptyTitle")}
+              description={t("clients.emptyDescription")}
             />
           </div>
         ) : null}

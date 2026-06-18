@@ -18,6 +18,7 @@ import {
 import { getSalonSettings } from "@/features/salon-settings/queries";
 import SetupChecklist from "@/components/setup-checklist";
 import { getSetupChecklistStatus } from "@/features/setup/checklist-queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 export default async function DashboardPage() {
   const permissions = await requireDashboardUser();
@@ -27,6 +28,8 @@ export default async function DashboardPage() {
       getSalonSettings(),
       getSetupChecklistStatus(),
     ]);
+
+  const t = getTranslator(salonSettings?.language);
 
   return (
     <main className="min-h-screen bg-app-bg p-4 md:p-6 lg:p-8">
@@ -43,9 +46,7 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold text-app-text">
             {salonSettings?.salon_name ?? "Salon"}
           </h1>
-          <p className="mt-2 text-app-muted">
-            Upravljanje terminima, klijentima i postavkama salona.
-          </p>
+          <p className="mt-2 text-app-muted">{t("dashboard.description")}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

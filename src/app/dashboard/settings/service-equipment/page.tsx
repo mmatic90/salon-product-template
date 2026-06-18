@@ -1,52 +1,67 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getServiceEquipmentMappingData } from "@/features/settings/queries";
 import ServiceEquipmentTable from "./service-equipment-table";
 import { requireAdminForSettings } from "@/lib/page-guards";
 import EmptyStateCard from "@/components/empty-state-card";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 export default async function SettingsServiceEquipmentPage() {
   await requireAdminForSettings();
 
-  const { services, equipment, mappings } =
-    await getServiceEquipmentMappingData();
+  const [mappingData, salonSettings] = await Promise.all([
+    getServiceEquipmentMappingData(),
+    getSalonSettings(),
+  ]);
+
+  const { services, equipment, mappings } = mappingData;
+  const t = getTranslator(salonSettings?.language);
 
   const activeServices = services.filter((item) => item.is_active);
   const activeEquipment = equipment.filter((item) => item.is_active);
 
   return (
-    <main className="min-h-screen p-4 md:p-6 lg:p-8">
+    <main className="min-h-screen bg-app-bg p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-2xl bg-white p-6 shadow-md">
+        <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Usluge i oprema</h1>
-              <p className="mt-2 text-neutral-600">
-                Odredi koja je oprema potrebna za pojedinu uslugu.
+              <h1 className="text-3xl font-bold text-app-text">
+                {t("serviceEquipmentSettings.title")}
+              </h1>
+              <p className="mt-2 text-app-muted">
+                {t("serviceEquipmentSettings.description")}
               </p>
             </div>
 
             <Link
               href="/dashboard/settings"
-              className="rounded-xl border border-neutral-300 px-4 py-2 font-medium"
+              className="rounded-xl border border-app-soft bg-white px-4 py-2 font-medium text-app-text transition hover:bg-app-bg"
             >
-              Natrag
+              {t("common.back")}
             </Link>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-6 shadow-md">
+        <div className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm">
           {activeServices.length === 0 || activeEquipment.length === 0 ? (
             <EmptyStateCard
-              title="Mapiranje trenutno nije dostupno"
-              description="Potrebno je imati barem jednu aktivnu uslugu i jednu aktivnu opremu kako bi se moglo definirati mapiranje."
+              title={t("serviceEquipmentSettings.emptyTitle")}
+              description={t("serviceEquipmentSettings.emptyDescription")}
             />
           ) : (
             <ServiceEquipmentTable
               services={services}
               equipment={equipment}
               mappings={mappings}
+              labels={{
+                editHint: t("serviceEquipmentSettings.editHint"),
+                saveChangesText: t("serviceEquipmentSettings.saveChangesText"),
+                reset: t("serviceEquipmentSettings.reset"),
+                saving: t("common.saving"),
+                saveChanges: t("serviceEquipmentSettings.saveChanges"),
+                service: t("serviceEquipmentSettings.table.service"),
+              }}
             />
           )}
         </div>

@@ -3,6 +3,9 @@ import { requireAdminForSettings } from "@/lib/page-guards";
 import PageShell from "@/components/page-shell";
 import PageHeader from "@/components/page-header";
 import PageSection from "@/components/page-section";
+import InfoTooltip from "@/components/info-tooltip";
+import { getSalonSettings } from "@/features/salon-settings/queries";
+import { getTranslator } from "@/lib/i18n/get-translator";
 
 function SettingsCard({
   href,
@@ -18,8 +21,10 @@ function SettingsCard({
       href={href}
       className="rounded-2xl border border-app-soft bg-app-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:bg-app-card-alt hover:shadow-md"
     >
-      <h2 className="text-xl font-semibold text-app-text">{title}</h2>
-      <p className="mt-2 text-app-muted">{description}</p>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-xl font-semibold text-app-text">{title}</h2>
+        <InfoTooltip text={description} />
+      </div>
     </Link>
   );
 }
@@ -27,79 +32,82 @@ function SettingsCard({
 export default async function SettingsPage() {
   await requireAdminForSettings();
 
+  const salonSettings = await getSalonSettings();
+  const t = getTranslator(salonSettings?.language);
+
   return (
     <PageShell maxWidth="max-w-7xl">
       <PageHeader
-        title="Postavke"
-        description="Upravljanje osnovnim podacima salona."
+        title={t("settings.title")}
+        description={t("settings.description")}
       />
 
-      <PageSection title="Moduli postavki">
+      <PageSection title={t("settings.modules")}>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <SettingsCard
             href="/dashboard/settings/salon-profile"
-            title="Profil salona"
-            description="Osnovni podaci salona, kontakt, boje i SMS potpis."
+            title={t("settings.salonProfile.title")}
+            description={t("settings.salonProfile.description")}
           />
-          
+
           <SettingsCard
             href="/dashboard/settings/services"
-            title="Usluge"
-            description="Dodavanje i aktivacija/deaktivacija usluga."
+            title={t("settings.services.title")}
+            description={t("settings.services.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/rooms"
-            title="Sobe"
-            description="Upravljanje sobama u salonu."
+            title={t("settings.rooms.title")}
+            description={t("settings.rooms.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/equipment"
-            title="Oprema"
-            description="Upravljanje opremom i količinama."
+            title={t("settings.equipment.title")}
+            description={t("settings.equipment.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/service-rooms"
-            title="Usluge i sobe"
-            description="Odredi u kojim sobama se pojedina usluga može izvoditi."
+            title={t("settings.serviceRooms.title")}
+            description={t("settings.serviceRooms.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/employee-services"
-            title="Zaposlenici i usluge"
-            description="Odredi koje usluge pojedini zaposlenik može raditi."
+            title={t("settings.employeeServices.title")}
+            description={t("settings.employeeServices.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/service-equipment"
-            title="Usluge i oprema"
-            description="Odredi koja je oprema potrebna za pojedinu uslugu."
+            title={t("settings.serviceEquipment.title")}
+            description={t("settings.serviceEquipment.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/salon-hours"
-            title="Radno vrijeme salona"
-            description="Uredi radno vrijeme salona po danima u tjednu."
+            title={t("settings.salonHours.title")}
+            description={t("settings.salonHours.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/group-limits"
-            title="Group limits"
-            description="Odredi koliko termina iz iste grupe može ići paralelno."
+            title={t("settings.groupLimits.title")}
+            description={t("settings.groupLimits.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/employees"
-            title="Djelatnici"
-            description="Dodavanje, uređivanje, deaktivacija i reset lozinke djelatnika."
+            title={t("settings.employees.title")}
+            description={t("settings.employees.description")}
           />
 
           <SettingsCard
             href="/dashboard/settings/audit-log"
-            title="Audit log"
-            description="Pregled svih akcija i promjena u sustavu."
+            title={t("settings.auditLog.title")}
+            description={t("settings.auditLog.description")}
           />
         </div>
       </PageSection>

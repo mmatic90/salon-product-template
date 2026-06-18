@@ -6,8 +6,29 @@ import type { SalonWorkingHourItem } from "@/features/settings/types";
 import { bulkUpdateSalonWorkingHoursAction } from "@/features/settings/actions";
 import { toast } from "sonner";
 
+type Labels = {
+  editHint: string;
+  saveChangesText: string;
+  reset: string;
+  saving: string;
+  saveChanges: string;
+  day: string;
+  closed: string;
+  opens: string;
+  closes: string;
+  open: string;
+  monday: string;
+  tuesday: string;
+  wednesday: string;
+  thursday: string;
+  friday: string;
+  saturday: string;
+  sunday: string;
+};
+
 type Props = {
   hours: SalonWorkingHourItem[];
+  labels: Labels;
 };
 
 type EditableHour = {
@@ -17,15 +38,17 @@ type EditableHour = {
   is_closed: boolean;
 };
 
-const dayRows = [
-  { value: 1, label: "Ponedjeljak" },
-  { value: 2, label: "Utorak" },
-  { value: 3, label: "Srijeda" },
-  { value: 4, label: "Četvrtak" },
-  { value: 5, label: "Petak" },
-  { value: 6, label: "Subota" },
-  { value: 0, label: "Nedjelja" },
-];
+function getDayRows(labels: Labels) {
+  return [
+    { value: 1, label: labels.monday },
+    { value: 2, label: labels.tuesday },
+    { value: 3, label: labels.wednesday },
+    { value: 4, label: labels.thursday },
+    { value: 5, label: labels.friday },
+    { value: 6, label: labels.saturday },
+    { value: 0, label: labels.sunday },
+  ];
+}
 
 function toEditable(
   rows: SalonWorkingHourItem[],
@@ -41,10 +64,12 @@ function toEditable(
   };
 }
 
-export default function SalonHoursTable({ hours }: Props) {
+export default function SalonHoursTable({ hours, labels }: Props) {
+  const dayRows = useMemo(() => getDayRows(labels), [labels]);
+
   const initialItems = useMemo(
     () => dayRows.map((day) => toEditable(hours, day.value)),
-    [hours],
+    [hours, dayRows],
   );
 
   const [items, setItems] = useState<EditableHour[]>(initialItems);
@@ -71,6 +96,7 @@ export default function SalonHoursTable({ hours }: Props) {
   function saveChanges() {
     startTransition(async () => {
       const result = await bulkUpdateSalonWorkingHoursAction(items);
+
       if (result.ok) {
         toast.success(result.message);
       } else {
@@ -83,8 +109,11 @@ export default function SalonHoursTable({ hours }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-app-muted">
-          Uredi radno vrijeme pa klikni{" "}
-          <span className="font-medium text-app-text">Spremi izmjene</span>.
+          {labels.editHint}{" "}
+          <span className="font-medium text-app-text">
+            {labels.saveChangesText}
+          </span>
+          .
         </div>
 
         <div className="flex gap-2">
@@ -95,7 +124,7 @@ export default function SalonHoursTable({ hours }: Props) {
             className="inline-flex items-center gap-2 rounded-xl border border-app-soft bg-white px-4 py-2 text-sm font-medium text-app-text transition hover:bg-app-bg disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            Poništi
+            {labels.reset}
           </button>
 
           <button
@@ -104,23 +133,23 @@ export default function SalonHoursTable({ hours }: Props) {
             disabled={pending || !hasChanges}
             className="rounded-xl bg-app-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? "Spremanje..." : "Spremi izmjene"}
+            {pending ? labels.saving : labels.saveChanges}
           </button>
         </div>
       </div>
 
-      <div className="hidden overflow-x-auto lg:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-app-soft lg:block">
         <table className="min-w-full border-collapse">
           <thead className="bg-app-table-head">
             <tr className="text-left text-sm text-app-muted">
-              <th className="px-4 py-3 font-semibold">Dan</th>
-              <th className="px-4 py-3 font-semibold">Zatvoreno</th>
-              <th className="px-4 py-3 font-semibold">Otvara</th>
-              <th className="px-4 py-3 font-semibold">Zatvara</th>
+              <th className="px-4 py-3 font-semibold">{labels.day}</th>
+              <th className="px-4 py-3 font-semibold">{labels.closed}</th>
+              <th className="px-4 py-3 font-semibold">{labels.opens}</th>
+              <th className="px-4 py-3 font-semibold">{labels.closes}</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="bg-app-card">
             {dayRows.map((day) => {
               const item = items.find((row) => row.day_of_week === day.value)!;
 
@@ -144,7 +173,7 @@ export default function SalonHoursTable({ hours }: Props) {
                       className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
                         item.is_closed ? "bg-app-soft" : "bg-app-accent"
                       }`}
-                      title={item.is_closed ? "Zatvoreno" : "Otvoreno"}
+                      title={item.is_closed ? labels.closed : labels.open}
                     >
                       <span
                         className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
@@ -200,6 +229,7 @@ export default function SalonHoursTable({ hours }: Props) {
                   type="button"
                   role="switch"
                   aria-checked={!item.is_closed}
+                  title={item.is_closed ? labels.closed : labels.open}
                   onClick={() =>
                     updateItem(day.value, "is_closed", !item.is_closed)
                   }
@@ -218,7 +248,7 @@ export default function SalonHoursTable({ hours }: Props) {
               <div className="mt-3 grid gap-3">
                 <div>
                   <label className="mb-1 block text-sm text-app-muted">
-                    Otvara
+                    {labels.opens}
                   </label>
                   <input
                     type="time"
@@ -233,7 +263,7 @@ export default function SalonHoursTable({ hours }: Props) {
 
                 <div>
                   <label className="mb-1 block text-sm text-app-muted">
-                    Zatvara
+                    {labels.closes}
                   </label>
                   <input
                     type="time"
